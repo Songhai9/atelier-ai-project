@@ -1,0 +1,40 @@
+# Local Python environments
+/.venv/
+/venv/
+
+# Python bytecode and package build outputs
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Test, lint and coverage outputs
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Local datasets and generated artifacts
+/data/
+/artifacts/
+
+# Local MLflow storage
+/mlruns/
+/mlartifacts/
+/mlflow.db
+/mlflow.db-*
+
+# Operating system files
+.DS_Store
+Thumbs.db
