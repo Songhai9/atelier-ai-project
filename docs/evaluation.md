@@ -49,11 +49,67 @@ Ranking quality will also be examined across customer-history segments to identi
 
 ## Temporal Protocol
 
-Training data is used to fit models. Validation data is used to select methods and hyperparameters. Test data is evaluated after these choices are frozen.
+The acquired transaction file covers 2018-09-20 through 2020-09-22.
+Transactions occur on all 734 calendar dates in that observed range.
 
-Features and candidates must use only information available before each prediction date.
+The initial local evaluation uses seven-day prediction targets.
 
-Actual date boundaries will be established after inspecting the dataset’s temporal coverage.
+All intervals have an inclusive start and an exclusive end.
+
+| Period | Start inclusive | End exclusive | Source transaction rows |
+|---|---|---|---:|
+| Pre-validation history | 2018-09-20 | 2020-09-09 | 31,292,772 |
+| Validation target | 2020-09-09 | 2020-09-16 | 255,241 |
+| Local test target | 2020-09-16 | 2020-09-23 | 240,311 |
+
+Volumes count source transaction rows, including retained repetitions.
+They are not counts of customers, distinct relevance labels or
+supervised training examples.
+
+### Historical Training Examples
+
+The pre-validation period is a source-history pool.
+
+Supervised examples will be constructed at historical prediction
+cutoffs. Each example uses features from records strictly before its
+cutoff and relevance from the following seven days.
+
+Training target windows must end no later than 2020-09-09.
+Learned preprocessing is fitted using eligible training examples only.
+
+### Validation and Test Execution
+
+Methods and hyperparameters are selected using the validation target.
+
+For V1, selected learned parameters remain fixed between validation
+and test. They are not refitted on validation targets.
+
+Historical features and candidates are recomputed at each prediction
+cutoff using only earlier observations. Validation-week transactions
+are therefore available as history at the 2020-09-16 test cutoff.
+
+Predictions issued at the beginning of a target week are not updated
+using purchases inside that week.
+
+Test results are inspected after model-selection choices are frozen
+and are not used to revise those choices.
+
+### Availability and Evaluation Scope
+
+Metadata fields require evidence of historical availability or an
+explicit, justified stability assumption before feature use.
+
+Target purchases absent from the candidate set remain in evaluation.
+Cold-start cases are reported rather than silently removed.
+
+This test is a local historical holdout, separate from the competition's
+hidden test data.
+
+One validation week and one test week provide an initial assessment.
+Broader temporal robustness requires additional historical cutoffs.
+
+Coverage calculations and boundary definitions are documented in the
+[analysis notebook](../notebooks/atelier_ai.ipynb).
 
 ## Model Selection
 
