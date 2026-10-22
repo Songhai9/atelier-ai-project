@@ -4,9 +4,14 @@
 
 Source documentation reviewed.
 
-Data acquisition, local inspection and validation are pending.
-No local row counts, date boundaries or data-quality findings are
-reported at this stage.
+The three required CSV files have been acquired locally. Acquisition
+metadata, file sizes and SHA-256 hashes are recorded in
+[data_manifest.json](data_manifest.json).
+
+Local file sizes and hashes have been checked against the manifest.
+
+Schema inspection, row counts, temporal coverage and data-quality
+validation are pending.
 
 ## Source
 
@@ -91,7 +96,6 @@ retail setting or a measurable commercial benefit.
 
 ## Pending Validation
 
-- Confirm acquired filenames, sizes and checksums.
 - Inspect schemas, types and row counts.
 - Establish the meaning and granularity of records.
 - Check missing values, repeated records and key relationships.
