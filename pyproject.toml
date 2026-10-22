@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atelier-ai"
+version = "0.1.0"
+description = "Personalised fashion recommendations for client advisors."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29,<8",
+    "jupyterlab>=4.3,<5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
