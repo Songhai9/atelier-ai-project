@@ -25,8 +25,7 @@ The data foundation and initial temporal evaluation protocol are implemented:
 - The main notebook contains executed diagnostics, aggregate results and Plotly figures with static PNG outputs.
 - Behavioral EDA has started with an explicit pre-validation scope, measurement definitions and a reconciled daily transaction-row aggregate.
 
-Customer and article behavioral analyses, feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact
-is reported yet.
+Customer activity analysis now covers transaction-row counts, first and last observed purchase dates, recency, distinct purchase days and distinct purchased articles, with reconciled aggregates and cumulative distributions. Customer-profile comparisons and article-level analyses remain in progress. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact is reported yet.
 
 ## Validated Data Scope
 
@@ -140,7 +139,7 @@ The unit tests use small synthetic fixtures and do not require competition data.
 ## Roadmap
 
 1. **Completed:** data acquisition, structural diagnostics, data-quality checks, initial temporal protocol and extraction of reusable functions.
-2. **In progress:** behavioural EDA on pre-validation history; scope and measurement definitions are implemented, with customer and article analyses next.
+2. **In progress:** behavioural EDA on pre-validation history; customer activity measures are implemented, with profile comparisons and article-level analyses next.
 3. **Planned:** candidate generation, features, baselines and a LightGBM ranking model.
 4. **Planned:** experiment tracking, evaluation, interpretation and a reproducible local demonstration.
 5. **Subsequent milestones:** PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
