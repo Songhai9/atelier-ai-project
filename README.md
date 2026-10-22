@@ -31,7 +31,50 @@ MAP@12 is the primary model-selection metric. Supporting diagnostics include rec
 
 Business framing and the evaluation strategy are documented.
 
-Data analysis, model training and application development are planned. No predictive performance or business impact is reported at this stage.
+The Python environment is configured with uv. Package imports and the
+notebook's execution environment have been verified locally in VS Code.
+
+Data analysis, model training and application development are planned.
+No predictive performance or business impact is reported at this stage.
+
+## Local Setup
+
+### Requirements
+
+- Git
+- uv
+- Python 3.12
+- VS Code with the Microsoft Python and Jupyter extensions
+
+### Installation
+
+```bash
+git clone https://github.com/Songhai9/atelier-ai-project.git
+cd atelier-ai-project
+uv sync --locked
+```
+
+Dependencies are declared in `pyproject.toml` and resolved in `uv.lock`.
+The local `.venv` directory is excluded from version control.
+
+### Notebook
+
+Open the repository folder in VS Code, then open
+[the main notebook](notebooks/atelier_ai.ipynb).
+
+Use the notebook kernel picker to select the Python interpreter located
+at `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe`
+on Windows.
+
+Restart the kernel and run all cells from top to bottom. The environment
+cell should report the project's virtual environment and an
+`atelier_ai` package location inside `src/atelier_ai`.
+
+### Dependency Check
+
+```bash
+uv pip check
+```
 
 ## Roadmap
 
