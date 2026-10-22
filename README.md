@@ -23,8 +23,10 @@ The data foundation and initial temporal evaluation protocol are implemented:
 - Temporal coverage and local validation/test boundaries are established.
 - Reusable reading and diagnostic functions are extracted into `src/atelier_ai` and covered by automated tests.
 - The main notebook contains executed diagnostics, aggregate results and Plotly figures with static PNG outputs.
+- Behavioral EDA has started with an explicit pre-validation scope, measurement definitions and a reconciled daily transaction-row aggregate.
 
-Behavioural EDA for model design, feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact is reported yet.
+Customer and article behavioral analyses, feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact
+is reported yet.
 
 ## Validated Data Scope
 
@@ -67,7 +69,8 @@ atelier-ai-project/
 │   ├── data_dictionary.md
 │   └── data_manifest.json
 ├── notebooks/
-│   └── data_foundation.ipynb
+│   ├── data_foundation.ipynb
+│   └── behavioral_eda.ipynb
 ├── src/atelier_ai/
 │   ├── __init__.py
 │   ├── data_io.py
@@ -119,6 +122,8 @@ The [data card](docs/data_card.md) describes scope and handling. The [manifest](
 
 Open [the main notebook](notebooks/data_foundation.ipynb) in VS Code. Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel.
 
+Continue with [the behavioral EDA notebook](notebooks/behavioral_eda.ipynb). Each notebook runs independently from a fresh kernel using the project environment.
+
 Restart the kernel and run all cells from top to bottom, then save the outputs. The environment cell should report the project virtual environment and an `atelier_ai` package location inside `src/atelier_ai`.
 
 Complete-file diagnostics scan the transaction CSV several times. Their runtime depends on local storage and hardware. Plotly figures include PNG outputs; static rendering requires a Chrome/Chromium installation supported by Kaleido.
@@ -135,7 +140,7 @@ The unit tests use small synthetic fixtures and do not require competition data.
 ## Roadmap
 
 1. **Completed:** data acquisition, structural diagnostics, data-quality checks, initial temporal protocol and extraction of reusable functions.
-2. **Next:** behavioural EDA on pre-validation history and modelling hypotheses.
+2. **In progress:** behavioural EDA on pre-validation history; scope and measurement definitions are implemented, with customer and article analyses next.
 3. **Planned:** candidate generation, features, baselines and a LightGBM ranking model.
 4. **Planned:** experiment tracking, evaluation, interpretation and a reproducible local demonstration.
 5. **Subsequent milestones:** PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
