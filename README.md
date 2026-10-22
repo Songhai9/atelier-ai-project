@@ -25,7 +25,7 @@ The data foundation and initial temporal evaluation protocol are implemented:
 - The main notebook contains executed diagnostics, aggregate results and Plotly figures with static PNG outputs.
 - Behavioral EDA has started with an explicit pre-validation scope, measurement definitions and a reconciled daily transaction-row aggregate.
 
-Customer activity EDA covers transaction-row counts, observed purchase dates, recency, distinct purchase days and distinct purchased articles. Descriptive profile comparisons combine purchase-day activity and recency, with reconciled tables and Plotly figures. Article popularity, repeat-purchase patterns and temporal variation are the next analyses. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact is reported yet.
+Behavioral EDA covers customer activity, article popularity and transaction-row concentration within the declared pre-validation history. Validated article-metadata joins support descriptive product-group and product-type summaries, with reconciled tables and Plotly figures. Repeat-purchase patterns and temporal variation are the next analyses. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact is reported yet.
 
 ## Validated Data Scope
 
