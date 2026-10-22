@@ -9,6 +9,7 @@ description = "Personalised fashion recommendations for client advisors."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "duckdb>=2.0.0",
     "kaleido>=1.5.0",
     "matplotlib>=3.11.2",
     "pandas>=3.0.6",
