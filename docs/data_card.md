@@ -4,7 +4,7 @@
 
 The three required CSV files have been acquired locally. File sizes and SHA-256 hashes are recorded in [data_manifest.json](data_manifest.json) and have been checked against the local files.
 
-Complete-file structural and data-quality diagnostics have been executed. Temporal coverage and the initial local evaluation windows are established. Calculations, aggregate outputs and figures are available in the [analysis notebook](../notebooks/atelier_ai.ipynb); reusable functions and automated tests are included in the repository.
+Complete-file structural and data-quality diagnostics have been executed. Temporal coverage and the initial local evaluation windows are established. Calculations, aggregate outputs and figures are available in the [analysis notebook](../notebooks/data_foundation.ipynb); reusable functions and automated tests are included in the repository.
 
 Behavioural EDA, feature engineering and model evaluation remain subsequent work.
 
@@ -132,4 +132,4 @@ Source files are excluded from Git. Published notebook outputs contain structura
 - [Evaluation strategy](evaluation.md)
 - [Data dictionary](data_dictionary.md)
 - [Acquisition manifest](data_manifest.json)
-- [Analysis notebook](../notebooks/atelier_ai.ipynb)
+- [Analysis notebook](../notebooks/data_foundation.ipynb)

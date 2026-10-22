@@ -67,7 +67,7 @@ atelier-ai-project/
 │   ├── data_dictionary.md
 │   └── data_manifest.json
 ├── notebooks/
-│   └── atelier_ai.ipynb
+│   └── data_foundation.ipynb
 ├── src/atelier_ai/
 │   ├── __init__.py
 │   ├── data_io.py
@@ -117,7 +117,7 @@ The [data card](docs/data_card.md) describes scope and handling. The [manifest](
 
 ### Notebook Execution
 
-Open [the main notebook](notebooks/atelier_ai.ipynb) in VS Code. Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel.
+Open [the main notebook](notebooks/data_foundation.ipynb) in VS Code. Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel.
 
 Restart the kernel and run all cells from top to bottom, then save the outputs. The environment cell should report the project virtual environment and an `atelier_ai` package location inside `src/atelier_ai`.
 

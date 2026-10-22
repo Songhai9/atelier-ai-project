@@ -176,4 +176,4 @@ with unsupported assumptions.
 - [Official dataset documentation](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/data)
 - [Data card](data_card.md)
 - [Acquisition manifest](data_manifest.json)
-- [Notebook: inspected structure and diagnostics](../notebooks/atelier_ai.ipynb)
+- [Notebook: inspected structure and diagnostics](../notebooks/data_foundation.ipynb)

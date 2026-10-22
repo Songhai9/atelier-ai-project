@@ -109,7 +109,7 @@ One validation week and one test week provide an initial assessment.
 Broader temporal robustness requires additional historical cutoffs.
 
 Coverage calculations and boundary definitions are documented in the
-[analysis notebook](../notebooks/atelier_ai.ipynb).
+[analysis notebook](../notebooks/data_foundation.ipynb).
 
 ## Model Selection
 
