@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "Personalised fashion recommendations for client advisors."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "pandas>=3.0.6",
+]
 
 [dependency-groups]
 dev = [
