@@ -16,16 +16,19 @@ Purchases are treated as implicit relevance signals. An unpurchased article is n
 
 ## Current Status
 
-The data foundation and initial temporal evaluation protocol are implemented:
+The data foundation, initial temporal evaluation protocol and behavioral EDA are complete:
 
 - Source acquisition is documented with file sizes and SHA-256 hashes.
 - Complete-file diagnostics cover schemas, entity keys, references, missingness, categories, numeric values, classification mappings and repeated transaction patterns.
 - Temporal coverage and local validation/test boundaries are established.
 - Reusable reading and diagnostic functions are extracted into `src/atelier_ai` and covered by automated tests.
-- The main notebook contains executed diagnostics, aggregate results and Plotly figures with static PNG outputs.
-- Behavioral EDA has started with an explicit pre-validation scope, measurement definitions and a reconciled daily transaction-row aggregate.
+- The data-foundation and behavioral EDA notebooks contain executed diagnostics, reconciled aggregates and Plotly figures with static PNG outputs.
+- Behavioral EDA covers customer activity, article popularity and concentration, product classifications, repeat purchases, observed product-group breadth and concentration, and temporal variation.
+- Five testable modeling hypotheses connect the EDA findings to future baseline, candidate-generation and feature comparisons.
 
-Behavioral EDA covers customer activity, article popularity and transaction-row concentration within the declared pre-validation history. Validated article-metadata joins support descriptive product-group and product-type summaries, with reconciled tables and Plotly figures. Repeat-purchase patterns and temporal variation are the next analyses. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact is reported yet.
+The behavioral EDA uses only pre-validation history: 31,292,772 transaction rows across 720 dates, covering 1,351,314 observed customers and 102,967 observed articles. Source transaction repetitions and the source category `Unknown` remain retained.
+
+The [behavioral EDA summary](docs/behavioral_eda.md) records the main findings, interpretation limits and modeling hypotheses. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact has been measured.
 
 ## Validated Data Scope
 
@@ -139,7 +142,7 @@ The unit tests use small synthetic fixtures and do not require competition data.
 ## Roadmap
 
 1. **Completed:** data acquisition, structural diagnostics, data-quality checks, initial temporal protocol and extraction of reusable functions.
-2. **In progress:** behavioural EDA on pre-validation history; customer activity, article popularity and category summaries are implemented, with repeat-purchase patterns and temporal variation next.
+2. **Completed:** behavioral EDA on pre-validation history, including customer activity, article popularity and concentration, category summaries, repeat-purchase patterns, observed product-group breadth and concentration, temporal variation and testable modeling hypotheses.
 3. **Planned:** candidate generation, features, baselines and a LightGBM ranking model.
 4. **Planned:** experiment tracking, evaluation, interpretation and a reproducible local demonstration.
 5. **Subsequent milestones:** PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
@@ -148,6 +151,7 @@ The unit tests use small synthetic fixtures and do not require competition data.
 
 - [Project brief](docs/project_brief.md)
 - [Evaluation strategy](docs/evaluation.md)
+- [Behavioral EDA summary](docs/behavioral_eda.md)
 - [Data card](docs/data_card.md)
 - [Data dictionary](docs/data_dictionary.md)
 - [Acquisition manifest](docs/data_manifest.json)

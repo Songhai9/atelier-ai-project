@@ -99,7 +99,7 @@ All intervals below have an inclusive start and an exclusive end.
 
 Counts retain repeated source rows. The history pool is not an already constructed supervised training table.
 
-Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Behavioural EDA used for model-design decisions will focus on pre-validation history.
+Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Completed behavioral EDA used for model-design decisions covers pre-validation history only. Its reconciled findings and testable modeling hypotheses are recorded in the [behavioral EDA summary](behavioral_eda.md) and [behavioral analysis notebook](../notebooks/behavioral_eda.ipynb).
 
 For V1, selected learned parameters remain fixed between validation and test, while historical features and candidates are refreshed at each cutoff. See the [evaluation strategy](evaluation.md) for the complete protocol.
 
@@ -133,3 +133,6 @@ Source files are excluded from Git. Published notebook outputs contain structura
 - [Data dictionary](data_dictionary.md)
 - [Acquisition manifest](data_manifest.json)
 - [Analysis notebook](../notebooks/data_foundation.ipynb)
+
+- [Behavioral EDA summary](behavioral_eda.md)
+- [Behavioral analysis notebook](../notebooks/behavioral_eda.ipynb)
