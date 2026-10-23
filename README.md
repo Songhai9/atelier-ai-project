@@ -139,7 +139,7 @@ The unit tests use small synthetic fixtures and do not require competition data.
 ## Roadmap
 
 1. **Completed:** data acquisition, structural diagnostics, data-quality checks, initial temporal protocol and extraction of reusable functions.
-2. **In progress:** behavioural EDA on pre-validation history; customer activity analysis is implemented, with article popularity, repeat-purchase patterns and temporal variation next.
+2. **In progress:** behavioural EDA on pre-validation history; customer activity, article popularity and category summaries are implemented, with repeat-purchase patterns and temporal variation next.
 3. **Planned:** candidate generation, features, baselines and a LightGBM ranking model.
 4. **Planned:** experiment tracking, evaluation, interpretation and a reproducible local demonstration.
 5. **Subsequent milestones:** PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
