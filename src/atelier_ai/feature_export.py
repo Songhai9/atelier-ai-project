@@ -111,13 +111,14 @@ def verify_feature_export(dataset_directory, *, expected_fingerprint=None) -> di
 def export_feature_batches(
     customer_ids, candidate_pools, feature_tables, build_batch, *, output_base,
     feature_columns, nullable_features, sql_schema, provenance, notebook_path,
-    candidates_per_customer, batch_customers=500,
+    candidates_per_customer, batch_customers=500, dataset_split="validation",
 ) -> dict:
     """Export disjoint customer batches, verify contents, then publish the directory.
 
     A matching complete export is verified and reused without invoking build_batch.
     Generated staging files are removed on failure; existing datasets are never replaced.
     """
+    _check(dataset_split in {"training", "validation", "test"}, "Unknown dataset split.")
     customer_ids = pd.Index(customer_ids)
     _check(len(customer_ids) > 0 and customer_ids.is_unique and not customer_ids.isna().any(),
            "A nonempty unique customer population is required.")
@@ -137,7 +138,8 @@ def export_feature_batches(
         candidate_digest.update((_canonical_json([str(customer_id), pool]) + "\n").encode())
     schema = [{"name": name, "type": kind} for name, kind in sql_schema.items()]
     identity = {
-        "schema_version": 1, "cutoff": pd.Timestamp(feature_tables["cutoff"]).isoformat(),
+        "schema_version": 1, "dataset_split": dataset_split,
+        "cutoff": pd.Timestamp(feature_tables["cutoff"]).isoformat(),
         "customer_order": list(map(str, customer_ids)),
         "candidate_sha256": candidate_digest.hexdigest(),
         "candidates_per_customer": candidates_per_customer, "batch_customers": batch_customers,
@@ -147,7 +149,7 @@ def export_feature_batches(
     fingerprint = hashlib.sha256(_canonical_json(identity).encode()).hexdigest()
     base = Path(output_base)
     base.mkdir(parents=True, exist_ok=True)
-    name = f"validation_{pd.Timestamp(feature_tables['cutoff']):%Y-%m-%d}_{fingerprint[:12]}"
+    name = f"{dataset_split}_{pd.Timestamp(feature_tables['cutoff']):%Y-%m-%d}_{fingerprint[:12]}"
     destination = base / name
     if destination.exists():
         checks = verify_feature_export(destination, expected_fingerprint=fingerprint)
@@ -218,6 +220,7 @@ def export_feature_batches(
                                   "sha256": file_sha256(path)})
         manifest = {
             "schema_version": 1, "status": "complete", "fingerprint": fingerprint,
+            "dataset_split": dataset_split,
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "cutoff": identity["cutoff"], "rows": sum(part["rows"] for part in parts),
             "customers": len(customer_ids), "candidates_per_customer": candidates_per_customer,

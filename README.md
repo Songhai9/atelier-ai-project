@@ -16,19 +16,17 @@ Purchases are treated as implicit relevance signals. An unpurchased article is n
 
 ## Current Status
 
-The data foundation, initial temporal evaluation protocol and behavioral EDA are complete:
+The data foundation, behavioral EDA, recommendation baselines and initial ranking-data preparation are implemented:
 
-- Source acquisition is documented with file sizes and SHA-256 hashes.
-- Complete-file diagnostics cover schemas, entity keys, references, missingness, categories, numeric values, classification mappings and repeated transaction patterns.
-- Temporal coverage and local validation/test boundaries are established.
-- Reusable reading and diagnostic functions are extracted into `src/atelier_ai` and covered by automated tests.
-- The data-foundation and behavioral EDA notebooks contain executed diagnostics, reconciled aggregates and Plotly figures with static PNG outputs.
-- Behavioral EDA covers customer activity, article popularity and concentration, product classifications, repeat purchases, observed product-group breadth and concentration, and temporal variation.
-- Five testable modeling hypotheses connect the EDA findings to future baseline, candidate-generation and feature comparisons.
+- Complete-file diagnostics and source provenance cover the acquired CSVs; chronological validation/test boundaries are documented.
+- Behavioral EDA uses pre-validation history and motivates candidate and feature choices.
+- Notebook 03 compares popularity, recent-purchase and dominant-category baselines on the fixed 20,000-customer validation cohort.
+- Retrieval produces 300 distinct candidates per customer; seventeen historical features are exported at the validation cutoff.
+- Notebook 04 prepares four historical target weeks and 24 million labelled candidate rows in 160 Parquet partitions.
+- Training-only group eligibility retains complete groups with both binary relevance values: 1,775 groups / 532,500 rows, including 2,753 positives. Full raw candidate/reference populations remain available.
+- Reusable functions and synthetic boundary tests cover temporal isolation, candidate/feature contracts, exports, labels, group selection and aligned model inputs.
 
-The behavioral EDA uses only pre-validation history: 31,292,772 transaction rows across 720 dates, covering 1,351,314 observed customers and 102,967 observed articles. Source transaction repetitions and the source category `Unknown` remain retained.
-
-The [behavioral EDA summary](docs/behavioral_eda.md) records the main findings, interpretation limits and modeling hypotheses. Feature engineering, recommendation baselines, model training and application development remain planned. No recommendation performance or business impact has been measured.
+The [EDA summary](docs/eda_summary.md), [evaluation strategy](docs/evaluation.md) and [training protocol](docs/training_protocol.md) document methods and limitations. A learned ranking model has not yet been fitted. Baseline results and candidate coverage are historical predictive diagnostics; no business impact has been established.
 
 ## Validated Data Scope
 
@@ -54,7 +52,7 @@ All intervals have an inclusive start and an exclusive end.
 | Validation target | 2020-09-09 | 2020-09-16 | 255,241 |
 | Local test target | 2020-09-16 | 2020-09-23 | 240,311 |
 
-The history period is a source pool; supervised examples have not yet been constructed. Features and candidates at a prediction cutoff use earlier transactions only. Historical training target windows must end no later than validation starts.
+The history period is a source pool. Supervised candidates are constructed at four historical cutoffs: 2020-08-12, 2020-08-19, 2020-08-26 and 2020-09-02. Their target windows end no later than validation starts. Features and candidates use transactions strictly before their own cutoff. Training-group selection is not applied to validation/test recipients or their full reference relevance.
 
 For V1, selected learned parameters remain fixed between validation and test. Historical features and candidates are recomputed at each cutoff. Test outcomes are reserved for the final assessment after model-selection choices are frozen.
 
@@ -64,31 +62,19 @@ The complete protocol and conventions are recorded in the [evaluation strategy](
 
 ```text
 atelier-ai-project/
-├── docs/
-│   ├── project_brief.md
-│   ├── evaluation.md
-│   ├── data_card.md
-│   ├── data_dictionary.md
-│   └── data_manifest.json
+├── docs/                    # scope, EDA, evaluation, training protocol, source manifest
 ├── notebooks/
-│   ├── data_foundation.ipynb
-│   └── behavioral_eda.ipynb
-├── src/atelier_ai/
-│   ├── __init__.py
-│   ├── data_io.py
-│   ├── data_quality.py
-│   ├── temporal.py
-│   └── transactions.py
-├── tests/
-│   ├── test_data_io.py
-│   ├── test_data_quality.py
-│   ├── test_temporal.py
-│   └── test_transactions.py
+│   ├── 01_data_foundation.ipynb
+│   ├── 02_behavioral_eda.ipynb
+│   ├── 03_candidates_and_features.ipynb
+│   └── 04_training_dataset.ipynb
+├── src/atelier_ai/          # readers, diagnostics, historical retrieval/features, exports, ranking inputs
+├── tests/                  # synthetic contract and boundary tests
 ├── pyproject.toml
 └── uv.lock
 ```
 
-The notebook presents the analysis and its interpretation. The Python package holds reusable computations; tests cover their contracts and boundary cases. Raw source files are stored locally under `data/raw/hm/` and excluded from version control.
+The notebooks present analysis, interpretation and the preparation workflow. The Python package holds reusable computations; tests cover their contracts and boundary cases. Raw source files are stored locally under `data/raw/hm/` and excluded from version control.
 
 ## Local Setup
 
@@ -122,13 +108,13 @@ The [data card](docs/data_card.md) describes scope and handling. The [manifest](
 
 ### Notebook Execution
 
-Open [the main notebook](notebooks/data_foundation.ipynb) in VS Code. Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel.
+Run the notebooks in numerical order using the project environment. Notebook 03 creates the fixed cohort export used by notebook 04. In notebook 04, set `VALIDATION_FEATURE_DATASET` to the complete validation export directory printed by notebook 03 if its fingerprint differs from the documented local default.
 
-Continue with [the behavioral EDA notebook](notebooks/behavioral_eda.ipynb). Each notebook runs independently from a fresh kernel using the project environment.
+Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel. Restart the kernel, run all cells top-to-bottom and save the outputs. Outputs not yet saved should be regenerated before sharing a notebook as executed evidence.
 
-Restart the kernel and run all cells from top to bottom, then save the outputs. The environment cell should report the project virtual environment and an `atelier_ai` package location inside `src/atelier_ai`.
+Complete-file diagnostics scan the transaction CSV several times. Notebook 04 materialises historical candidates in customer batches and loads only eligible groups for ranker inputs. Runtime and memory depend on local hardware; per-DataFrame estimates are not process peak-RAM measurements.
 
-Complete-file diagnostics scan the transaction CSV several times. Their runtime depends on local storage and hardware. Plotly figures include PNG outputs; static rendering requires a Chrome/Chromium installation supported by Kaleido.
+Derived datasets are written under `data/processed/` and remain Git-ignored. Typed Parquet files and manifests support verification/reuse of matching exports. Notebook code fingerprints change when source changes; new versions can coexist without overwriting older exports. Static Plotly rendering in the exploratory notebooks requires Chrome/Chromium supported by Kaleido.
 
 ### Checks
 
@@ -141,17 +127,19 @@ The unit tests use small synthetic fixtures and do not require competition data.
 
 ## Roadmap
 
-1. **Completed:** data acquisition, structural diagnostics, data-quality checks, initial temporal protocol and extraction of reusable functions.
-2. **Completed:** behavioral EDA on pre-validation history, including customer activity, article popularity and concentration, category summaries, repeat-purchase patterns, observed product-group breadth and concentration, temporal variation and testable modeling hypotheses.
-3. **Planned:** candidate generation, features, baselines and a LightGBM ranking model.
-4. **Planned:** experiment tracking, evaluation, interpretation and a reproducible local demonstration.
-5. **Subsequent milestones:** PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
+1. **Completed:** data acquisition, full-file diagnostics and chronological evaluation protocol.
+2. **Completed:** behavioral EDA and modelling hypotheses.
+3. **Prepared:** recommendation baselines, historical candidate features/labels and an explicit grouped-ranking training contract.
+4. **Next:** train the first ranker, compare with full-reference validation baselines, track experiments and interpret errors.
+5. **Later:** reproducible local application, PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
 
 ## Documentation
 
 - [Project brief](docs/project_brief.md)
 - [Evaluation strategy](docs/evaluation.md)
-- [Behavioral EDA summary](docs/behavioral_eda.md)
+- [Training protocol](docs/training_protocol.md)
+- [Methodological decision register](docs/methodological_decisions.md)
+- [Behavioral EDA summary](docs/eda_summary.md)
 - [Data card](docs/data_card.md)
 - [Data dictionary](docs/data_dictionary.md)
 - [Acquisition manifest](docs/data_manifest.json)

@@ -77,6 +77,9 @@ cutoff and relevance from the following seven days.
 Training target windows must end no later than 2020-09-09.
 Learned preprocessing is fitted using eligible training examples only.
 
+The initial historical cutoffs are 2020-08-12, 2020-08-19, 2020-08-26 and 2020-09-02. Each has a seven-day target and cutoff-specific historical candidates/features. For initial grouped ranker fitting, retain complete training groups only when candidate labels contain both 0 and 1. This target-dependent selection is restricted to historical training; it does not change validation/test recipients, reference targets or metric denominators. See the [training protocol](training_protocol.md) for the group audit and input contract.
+
+
 ### Validation and Test Execution
 
 Methods and hyperparameters are selected using the validation target.
@@ -109,7 +112,7 @@ One validation week and one test week provide an initial assessment.
 Broader temporal robustness requires additional historical cutoffs.
 
 Coverage calculations and boundary definitions are documented in the
-[analysis notebook](../notebooks/data_foundation.ipynb).
+[analysis notebook](../notebooks/01_data_foundation.ipynb).
 
 ## Model Selection
 

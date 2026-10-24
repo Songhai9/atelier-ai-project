@@ -2,7 +2,7 @@
 
 ## Status and Evidence
 
-Behavioral EDA and its modeling-hypothesis register are complete. Results come from saved, executed outputs in the [behavioral EDA notebook](../notebooks/behavioral_eda.ipynb), including its reconciliation checks and Plotly figures with PNG outputs.
+Behavioral EDA and its modeling-hypothesis register are complete. Results come from saved, executed outputs in the [behavioral EDA notebook](../notebooks/02_behavioral_eda.ipynb), including its reconciliation checks and Plotly figures with PNG outputs.
 
 No supervised training examples, recommendation baselines or learned rankers have been implemented at this milestone. Predictive performance and business impact remain unmeasured.
 
@@ -93,8 +93,8 @@ Implement candidate generation, cutoff-safe features and the declared reference 
 
 ## References
 
-- [Behavioral EDA notebook](../notebooks/behavioral_eda.ipynb)
-- [Data foundation notebook](../notebooks/data_foundation.ipynb)
+- [Behavioral EDA notebook](../notebooks/02_behavioral_eda.ipynb)
+- [Data foundation notebook](../notebooks/01_data_foundation.ipynb)
 - [Evaluation strategy](evaluation.md)
 - [Data card](data_card.md)
 - [Project brief](project_brief.md)

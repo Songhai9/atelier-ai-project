@@ -4,7 +4,7 @@
 
 The three required CSV files have been acquired locally. File sizes and SHA-256 hashes are recorded in [data_manifest.json](data_manifest.json) and have been checked against the local files.
 
-Complete-file structural and data-quality diagnostics have been executed. Temporal coverage and the initial local evaluation windows are established. Calculations, aggregate outputs and figures are available in the [analysis notebook](../notebooks/data_foundation.ipynb); reusable functions and automated tests are included in the repository.
+Complete-file structural and data-quality diagnostics have been executed. Temporal coverage and the initial local evaluation windows are established. Calculations, aggregate outputs and figures are available in the [analysis notebook](../notebooks/01_data_foundation.ipynb); reusable functions and automated tests are included in the repository.
 
 Behavioural EDA, feature engineering and model evaluation remain subsequent work.
 
@@ -99,7 +99,7 @@ All intervals below have an inclusive start and an exclusive end.
 
 Counts retain repeated source rows. The history pool is not an already constructed supervised training table.
 
-Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Completed behavioral EDA used for model-design decisions covers pre-validation history only. Its reconciled findings and testable modeling hypotheses are recorded in the [behavioral EDA summary](behavioral_eda.md) and [behavioral analysis notebook](../notebooks/behavioral_eda.ipynb).
+Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Completed behavioral EDA used for model-design decisions covers pre-validation history only. Its reconciled findings and testable modeling hypotheses are recorded in the [behavioral EDA summary](eda_summary.md) and [behavioral analysis notebook](../notebooks/02_behavioral_eda.ipynb).
 
 For V1, selected learned parameters remain fixed between validation and test, while historical features and candidates are refreshed at each cutoff. See the [evaluation strategy](evaluation.md) for the complete protocol.
 
@@ -132,7 +132,7 @@ Source files are excluded from Git. Published notebook outputs contain structura
 - [Evaluation strategy](evaluation.md)
 - [Data dictionary](data_dictionary.md)
 - [Acquisition manifest](data_manifest.json)
-- [Analysis notebook](../notebooks/data_foundation.ipynb)
+- [Analysis notebook](../notebooks/01_data_foundation.ipynb)
 
-- [Behavioral EDA summary](behavioral_eda.md)
-- [Behavioral analysis notebook](../notebooks/behavioral_eda.ipynb)
+- [Behavioral EDA summary](eda_summary.md)
+- [Behavioral analysis notebook](../notebooks/02_behavioral_eda.ipynb)
