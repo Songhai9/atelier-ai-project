@@ -31,7 +31,7 @@ The same customer may appear in several weeks. The split measures future-period 
 
 All target purchases remain in reference relevance, including articles that will be absent from historical candidates. Reference relevance must not be restricted to retrieved candidates.
 
-The candidate-feature training table is not yet built in milestone 4.4c. Relevance-row counts are not candidate-positive counts, candidate coverage, class balance in the eventual training matrix or model performance.
+At the target-only milestone 4.4c, the candidate-feature training table had not yet been built; it was subsequently materialised in 4.4d below. Relevance-row counts are not candidate-positive counts, candidate coverage, class balance in the eventual training matrix or model performance.
 
 ## Attaching labels to future candidate rows
 
@@ -86,3 +86,18 @@ This filter is restricted to historical training. Validation/test recommendation
 `ranking_data.py` sorts selected rows by cutoff, customer ID, then article ID. X contains exactly the seventeen ordered features; y contains aligned binary relevance. Identifiers, group descriptors, dates and target labels are excluded from X. Group sizes refer to consecutive row blocks and sum to the number of X/y rows, following the [LGBMRanker grouped-input convention](https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.LGBMRanker.html).
 
 Expected missing features remain missing. No scaler, encoder, imputer or model is fitted during preparation. The selected Parquet, group index, complete audit, source snapshot and provenance manifest are exported under Git-ignored `data/processed/ranker_training/`. A future model can reconstruct aligned X, y and group sizes from these artifacts.
+
+
+## First fixed LightGBM experiment (stage 5)
+
+Notebook `05_lightgbm_ranker.ipynb` reconstructs aligned inputs from the selected export and verifies feature order, group boundaries, chronology and upstream checksums. The fitted input remains 532,500 rows, seventeen features and 1,775 consecutive groups of 300 candidates. The 2,753 positive labels and 529,747 zeros are conditional on the training-only group selection.
+
+The first declared configuration is `lightgbm_lambdarank_v1_fixed100`, using LightGBM 4.7.0 with `LGBMRanker`, `objective="lambdarank"`, `boosting_type="gbdt"`, `n_estimators=100`, `learning_rate=0.05`, `num_leaves=15`, `max_depth=-1` and `min_child_samples=20`. Binary relevance uses `label_gain=[0, 1]`, `lambdarank_truncation_level=15` and `lambdarank_norm=True`. Normalisation is part of the ranking objective; the experiment supplies no additional sample weights. These are explicit starting choices, not tuned optima.
+
+Missing features remain missing (`use_missing=True`, `zero_as_missing=False`). There is no fitted scaler, encoder or imputer, and `categorical_feature=[]` is explicit. Identifiers and labels remain excluded from X. Execution uses CPU, `random_state=42`, `n_jobs=4`, `deterministic=True` and `force_col_wise=True`. These settings support reproducibility within the recorded environment; they do not promise identical models across all library versions or hardware.
+
+The estimator is fitted on training data only, with `group=train_group_sizes` and `feature_name=FEATURE_COLUMNS`. No validation `eval_set`, early stopping, class rebalancing, within-group negative sampling or post-validation refit is introduced. The saved model contains 100 iterations and seventeen features. LambdaRank's training objective is distinct from the external full-reference MAP@12 used to compare systems.
+
+The native text model is stored under `data/processed/models/`, with configuration, feature order, runtime versions and SHA-256 metadata. Validation uses a fresh native Booster loaded from this file, verifying feature names and model identity. Batches contain complete customer groups; scores are ordered descending, with lexical `article_id` ascending as the tie break. Twelve distinct recommendations are produced for each recipient.
+
+The [first-ranker results](first_ranker_results.md) record the validation comparison and complete evidence snapshot. The recent-purchase baseline currently leads the first comparison. Additional modelling choices must still be selected using validation; the local test remains reserved until those choices are frozen.

@@ -29,13 +29,13 @@ This choice follows the evaluation metric used in the [H&M Personalized Fashion 
 
 ## Baseline Methods
 
-The learned model will be compared with:
+Notebook 05 compares the first learned model with:
 
 1. **Recent popularity:** products ranked by recent global purchase activity.
 2. **Category preference:** popular products within the customer’s preferred categories.
 3. **Recent purchases:** previously purchased products, completed with recent popular products.
 
-The methods will be evaluated using the same customer cohort, target periods and metric definitions.
+All four methods are evaluated using the same customer cohort, target period and metric definitions.
 
 ## Supporting Diagnostics
 
@@ -129,3 +129,18 @@ Predictive success is assessed relative to the baseline methods, with supporting
 Functional evaluation will separately assess recommendation validity, response latency and the advisor workflow.
 
 Improved offline ranking metrics do not establish increased sales, conversion or reduced preparation time. Those outcomes require dedicated usage studies or experiments.
+
+## Implemented full-reference evaluation (stage 5)
+
+`ranking_metrics.py` validates complete recipient coverage and distinct top-k lists, including recipients without target purchases. It computes per-buyer AP@12 and Recall@12 against the full distinct target set. Buyers whose purchases are absent from all candidates remain eligible and receive zero hits. No target reference is restricted to retrieved articles.
+
+- **MAP@12:** equal-weight mean AP across the 1,015 validation buyers; AP's denominator is `min(12, full distinct target count)` for that buyer.
+- **Macro Recall@12:** equal-weight mean of each buyer's hits divided by their full distinct target count.
+- **Micro Recall@12:** total retrieved customer-article targets divided by all 3,073 distinct customer-article targets. This is a diagnostic separate from the macro mean.
+- **Excluded share:** 18,985 / 20,000 recipients = 94.925% have no observed target purchase and are excluded from target-based averages. All 20,000 still receive recommendations.
+
+The validation target is `[2020-09-09, 2020-09-16)`. Its cohort reference retains 3,454 source transaction rows and separately deduplicates them to 3,073 relevant customer-article pairs. Repeated source transactions are not interpreted as separate relevant articles or as orders.
+
+Paired diagnostics align model and baseline scores by the same 1,015 buyers. History segments use observed purchases in `[2020-03-13, 2020-09-09)`, not lifetime customer tenure. Segment MAP differences are weighted by segment buyer count when reconciling the overall difference.
+
+The first comparison and export identities are recorded in [first-ranker results](first_ranker_results.md). Recent purchases leads this comparison; this does not establish that it will remain best after further declared validation experiments. Catalogue coverage and broader temporal robustness are not established by this first learned experiment. Local-test outcomes remain unevaluated.

@@ -4,7 +4,9 @@ This register distinguishes task definitions, practical starting choices and mea
 
 ## Current preparation status
 
-The four notebooks are executed and saved. The selected historical training export reconstructs X with 532,500 rows and 17 features, aligned y with 2,753 positive labels, and 1,775 groups of 300 consecutive rows. All 58 current tests pass. No learned ranker has been fitted yet.
+Five notebooks now cover preparation and the first fixed learned experiment. The selected historical inputs contain 532,500 rows, seventeen features, 2,753 positive labels and 1,775 complete groups. Notebook 05 trains and reloads a 100-iteration LightGBM LambdaRank model, evaluates four methods against complete validation references and exports reconciled evidence. Synthetic metric-contract tests supplement the preparation tests.
+
+The recent-purchase baseline leads full-reference validation MAP@12 (0.022168 versus 0.020495 for LightGBM). This is a first reference comparison, not an optimised-model claim. No local-test performance has been inspected. See [first-ranker results](first_ranker_results.md).
 
 ## Decision register
 
@@ -20,12 +22,12 @@ The four notebooks are executed and saved. The selected historical training expo
 | Fixed 20,000-customer cohort | Keep the first local workflow tractable and comparisons aligned | Cohort selection uses seeded SHA-256 ordering independently of target purchase activity; sparse buyers are retained in reference population | Broader cohorts and sensitivity to cohort choice before generalisation claims |
 | Seed 42 | Reproduce a declared initial run | The particular number has no performance justification or special statistical status | Replicated cohorts/seeds where uncertainty and robustness require it |
 | Source purchase repetitions retained | Preserve acquired observations for frequency calculations | Relevance is separately deduplicated per customer–article–week | Do not silently treat every repeated source row as a data error |
-| Seventeen historical features | Operationalise EDA motivations using customer, article, interaction and retrieval information | Historical boundaries, joins and storage are validated. Individual predictive benefit has not yet been demonstrated by a learned model | Feature-family ablations and validation error analysis |
+| Seventeen historical features | Operationalise EDA motivations using customer, article, interaction and retrieval information | Historical boundaries, joins and storage are validated. The first learned configuration has been evaluated; individual feature benefit remains unmeasured without ablations | Feature-family ablations and validation error analysis |
 | Product-group metadata | Use the broad classification with an explicit stability assumption | Historical observation dates are unavailable; stability is not verified | Reassess if timestamped catalogue data becomes available |
 | Keep training groups with both 0 and 1 labels | Provide observed within-group preference contrasts for initial binary grouped ranking | Selection is restricted to historical training and is conditional on labels; it changes the training distribution | Evaluate the learned model on the complete validation population, not only on retrieved-positive groups |
 | Keep all 300 candidates of selected groups | Avoid introducing another sampling policy in the first local experiment | 532,500 rows are manageable; class imbalance remains. No synthetic positives or extra sample weights were introduced | Negative-sampling/weighting experiments only if there is a justified need |
 | Batch 500 customers | Bound the current feature DataFrame while keeping each group intact | This is an execution parameter, not a learned-model hyperparameter or a measured optimum. Per-frame memory is not peak process RAM | Measure actual runtime and process memory before tuning batch size |
-| Learned-model configuration | Not yet selected or fitted | No claim of an optimised learning rate, tree count or architecture is currently supported | Record fixed initial parameters before the first run, then distinguish subsequent validation tuning |
+| Learned-model configuration | Fixed first LambdaRank reference: 100 iterations, learning rate 0.05, up to 15 leaves; full configuration is retained | Trained and exported; validation MAP@12 is below the recent-purchase baseline. No hyperparameter search or early stopping was used | Controlled validation experiments with declared configurations; keep the local test reserved |
 
 ## What the current evidence establishes
 
@@ -34,6 +36,14 @@ The full four-cutoff candidate collection has 24 million rows and 80,000 custome
 The selected training subset retains 1,775 complete groups and all 2,753 currently retrieved positives. It excludes constant-label training groups from ranker fitting while preserving raw exports and the audit. Validation/test recipient populations and full reference targets are unaffected.
 
 Notebook 03's validation baselines and same-budget candidate-policy comparisons establish reference behaviour. They do not establish that 300 candidates, the source caps or historical windows are optimal.
+
+## Evidence from the first learned experiment
+
+All four methods recommend to the full fixed 20,000-customer cohort. The 1,015 validation buyers account for 3,073 distinct customer-article targets. Recent purchases retrieves 111 targets and LightGBM retrieves 90. Their full-reference MAP@12 difference (model minus baseline) is -0.0016732647833025346.
+
+At a numerical tolerance of 1e-12, 37 buyers improve AP, 926 are unchanged and 52 worsen. Buyers without observed 180-day history (187) have a positive mean difference, while buyers with history (828) have a negative difference that dominates the aggregate. These are paired descriptive diagnostics, without a causal explanation or statistical-significance claim. Equal MAP or an unchanged AP does not imply identical recommendation lists.
+
+The current leading method is the recent-purchase baseline under the existing selection rule. The first ranker remains an inspectable reference, including its unsuccessful comparison. Candidate-budget sensitivity below remains future work; this stage did not compare budgets or tune the model.
 
 ## Candidate-budget sensitivity plan
 

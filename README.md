@@ -16,17 +16,18 @@ Purchases are treated as implicit relevance signals. An unpurchased article is n
 
 ## Current Status
 
-The data foundation, behavioral EDA, recommendation baselines and initial ranking-data preparation are implemented:
+The first fixed LightGBM LambdaRank experiment is trained, evaluated and exported alongside the three reference baselines:
 
-- Complete-file diagnostics and source provenance cover the acquired CSVs; chronological validation/test boundaries are documented.
-- Behavioral EDA uses pre-validation history and motivates candidate and feature choices.
-- Notebook 03 compares popularity, recent-purchase and dominant-category baselines on the fixed 20,000-customer validation cohort.
-- Retrieval produces 300 distinct candidates per customer; seventeen historical features are exported at the validation cutoff.
-- Notebook 04 prepares four historical target weeks and 24 million labelled candidate rows in 160 Parquet partitions.
-- Training-only group eligibility retains complete groups with both binary relevance values: 1,775 groups / 532,500 rows, including 2,753 positives. Full raw candidate/reference populations remain available.
-- Reusable functions and synthetic boundary tests cover temporal isolation, candidate/feature contracts, exports, labels, group selection and aligned model inputs.
+- Data foundation, behavioral EDA, historical retrieval and seventeen cutoff-specific features are implemented.
+- Notebook 04 retains four historical target weeks, 24 million raw labelled candidate rows and the complete reference populations.
+- Training-only eligibility retains 1,775 complete groups / 532,500 rows, including 2,753 positives; no within-group sampling or additional sample weights are used.
+- Notebook 05 trains 100 boosting iterations with a fixed initial configuration, reloads the native model and scores all 6 million validation candidate rows in batches.
+- All four methods recommend twelve distinct articles to each of 20,000 recipients. Full-reference metrics include all 1,015 validation buyers and all 3,073 distinct customer-article targets, including retrieval misses.
+- The recent-purchase baseline leads validation MAP@12 (0.022168), ahead of the first LightGBM ranker (0.020495). It remains the current leading selection under the documented rule.
+- Paired customer and observed-history diagnostics, recommendations, full references, model/configuration and source snapshots are exported with checksums.
+- Reusable functions and synthetic tests cover temporal boundaries, retrieval/features, labels, grouped inputs, exports and complete-reference ranking metrics.
 
-The [EDA summary](docs/eda_summary.md), [evaluation strategy](docs/evaluation.md) and [training protocol](docs/training_protocol.md) document methods and limitations. A learned ranking model has not yet been fitted. Baseline results and candidate coverage are historical predictive diagnostics; no business impact has been established.
+See the [first-ranker results](docs/first_ranker_results.md) for exact scope, results and artifact locations. This is one fixed learned configuration on one validation week, without hyperparameter search. The local test remains unevaluated; no business impact or broader temporal robustness is established.
 
 ## Validated Data Scope
 
@@ -67,8 +68,9 @@ atelier-ai-project/
 │   ├── 01_data_foundation.ipynb
 │   ├── 02_behavioral_eda.ipynb
 │   ├── 03_candidates_and_features.ipynb
-│   └── 04_training_dataset.ipynb
-├── src/atelier_ai/          # readers, diagnostics, historical retrieval/features, exports, ranking inputs
+│   ├── 04_training_dataset.ipynb
+│   └── 05_lightgbm_ranker.ipynb
+├── src/atelier_ai/          # readers, retrieval/features, exports, ranking inputs and metrics
 ├── tests/                  # synthetic contract and boundary tests
 ├── pyproject.toml
 └── uv.lock
@@ -92,7 +94,7 @@ cd atelier-ai-project
 uv sync --locked
 ```
 
-Dependencies are declared in `pyproject.toml` and resolved in `uv.lock`.
+Dependencies are declared in `pyproject.toml` and resolved in `uv.lock`, including `lightgbm[scikit-learn]==4.7.0`. On macOS, the LightGBM wheel also requires the OpenMP runtime: install `libomp` with Homebrew (`brew install libomp`) before importing LightGBM. This native runtime is separate from Python package resolution.
 
 ### Data Preparation
 
@@ -108,9 +110,11 @@ The [data card](docs/data_card.md) describes scope and handling. The [manifest](
 
 ### Notebook Execution
 
-Run the notebooks in numerical order using the project environment. Notebook 03 creates the fixed cohort export used by notebook 04. In notebook 04, set `VALIDATION_FEATURE_DATASET` to the complete validation export directory printed by notebook 03 if its fingerprint differs from the documented local default.
+Run the notebooks in numerical order using the project environment. Notebook 03 creates the fixed cohort export used by notebook 04. In notebooks 04 and 05, set `VALIDATION_FEATURE_DATASET` to the complete validation export directory printed by notebook 03 if its fingerprint differs from the documented local default.
 
 Select `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows as the kernel. Restart the kernel, run all cells top-to-bottom and save the outputs. Outputs not yet saved should be regenerated before sharing a notebook as executed evidence.
+
+Notebook 05 also loads the selected `RANKER_DATASET` export from notebook 04. Save its source before artifact exports so notebook snapshots capture the implemented workflow. Match the fingerprints recorded in each manifest rather than silently substituting a different dataset.
 
 Complete-file diagnostics scan the transaction CSV several times. Notebook 04 materialises historical candidates in customer batches and loads only eligible groups for ranker inputs. Runtime and memory depend on local hardware; per-DataFrame estimates are not process peak-RAM measurements.
 
@@ -129,15 +133,17 @@ The unit tests use small synthetic fixtures and do not require competition data.
 
 1. **Completed:** data acquisition, full-file diagnostics and chronological evaluation protocol.
 2. **Completed:** behavioral EDA and modelling hypotheses.
-3. **Prepared:** recommendation baselines, historical candidate features/labels and an explicit grouped-ranking training contract.
-4. **Next:** train the first ranker, compare with full-reference validation baselines, track experiments and interpret errors.
-5. **Later:** reproducible local application, PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
+3. **Completed:** recommendation baselines, historical candidate features/labels and an explicit grouped-ranking training contract.
+4. **First reference experiment completed:** fixed LightGBM fitting, full-reference validation comparison, paired/history diagnostics and immutable evidence snapshots.
+5. **Remaining modelling work:** controlled validation comparisons from the decision register, freeze the selected system, then assess the reserved local test. Candidate-budget sensitivity remains a plan, not a completed experiment.
+6. **Later:** reproducible local application, PyTorch comparison, GCP deployment and a GenAI assistant for the advisor.
 
 ## Documentation
 
 - [Project brief](docs/project_brief.md)
 - [Evaluation strategy](docs/evaluation.md)
 - [Training protocol](docs/training_protocol.md)
+- [First-ranker results](docs/first_ranker_results.md)
 - [Methodological decision register](docs/methodological_decisions.md)
 - [Behavioral EDA summary](docs/eda_summary.md)
 - [Data card](docs/data_card.md)
