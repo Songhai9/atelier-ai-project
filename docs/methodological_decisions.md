@@ -13,12 +13,12 @@
 | 31 numeric/boolean features; missing unobserved recencies | Preserves the difference between absence and measured zero | Raw IDs and customer snapshot attributes are not model inputs |
 | Complete informative groups for fitting | Pairwise ordering needs positive and negative candidates | Training-only filter; keep complete evaluation recipients and references |
 | Complete-reference MAP selection and NDCG stopping | Separates final metric choice from the smooth rank-sensitive stopping signal | Missing-retrieval buyers score zero; nonbuyers excluded with share reported |
-| Initial configuration, then six declared comparisons | Bounds capacity search and makes choices inspectable | Initial experiment alone is not tuned-model evidence |
+| Initial configuration, then six declared comparisons | Bounds capacity search and makes choices inspectable | All six trials recorded; MAP selects 63/20 at iteration 8 for stage 8 |
 | Native model reload check and MLflow provenance | Connects the scored model to the recorded data/configuration/code | Local fit/scoring durations are not serving latency |
 | Final refit only after selection freeze | Uses training plus validation without choosing iterations from test outcomes | Intermediate V1 is retrospective; final model confirmation remains reserved |
 
 ## Planned controlled comparisons
 
-The declared next search is leaves {15,31,63} × minimum examples {20,100}. Then run ablations without recency, affinities and popularity, keeping candidates, periods, metrics and evaluation populations fixed. Report SHAP examples, successes/failures, timings and customer-bootstrap uncertainty before final selection and refit.
+The declared search of leaves {15,31,63} × minimum examples {20,100} is complete. Complete-reference validation MAP@12 selects 63/20 at iteration 8 as the reference candidate. Among exactly tied learned configurations, the declared sorting prefers fewer maximum leaves and then a higher minimum leaf size; a baseline remains preferred on an exact tie with the leading ranker. Next run ablations without recency, affinities and popularity, keeping candidates, periods, metrics and evaluation populations fixed. Report SHAP examples, successes/failures, timings and customer-bootstrap uncertainty before final selection and refit.
 
 No experiment presupposes LightGBM superiority. A baseline remains eligible for serving. Extra candidate-budget or window sensitivity experiments require a declared scope and do not replace the reference plan's current next increment.

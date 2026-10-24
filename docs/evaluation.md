@@ -38,7 +38,7 @@ Repeated source purchases do not create duplicate relevant articles. Never restr
 
 Compare recent global popularity, popularity in three preferred product types, recent personal purchases with popularity fill, and the initial LambdaRank model. Use identical cohort, target period and metric definitions. A baseline remains eligible for eventual serving.
 
-The initial learned model uses the planned starting configuration and validation NDCG stopping with patience 50. Its stopping metric uses full target counts for ideal gain and excludes nonbuyers; it does not treat buyers with completely missed retrieval as perfect empty groups. Six-configuration tuning and final selection remain subsequent work.
+The initial learned model uses the planned starting configuration and validation NDCG stopping with patience 50. Its stopping metric uses full target counts for ideal gain and excludes nonbuyers; it does not treat buyers with completely missed retrieval as perfect empty groups. The six-configuration comparison is complete: validation MAP@12 selects 63 leaves / minimum 20 with iteration 8 as the stage-8 candidate. SHAP, controlled ablations, uncertainty and final method selection remain subsequent work. See [tuning results](lightgbm_tuning_results.md).
 
 ## Selection, fitting and reserved outcomes
 

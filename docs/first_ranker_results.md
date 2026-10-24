@@ -13,7 +13,7 @@ Does the planned initial LambdaRank model improve complete-reference validation 
 | recent_purchases_180d | 0.025445 | 0.055198 | 0.036811 |
 | lightgbm_initial | 0.027023 | 0.056514 | 0.038934 |
 
-The leading method in this initial comparison is **lightgbm_initial**. This is a validation observation, not a final production decision or a claim of commercial benefit. The declared six-configuration search remains next.
+The leading method in this initial comparison is **lightgbm_initial**. This is a validation observation, not a final production decision or a claim of commercial benefit. The subsequent six-configuration search is complete and selects a 63/20 candidate with MAP@12=0.032710. This page retains the initial experiment; see [controlled tuning results](lightgbm_tuning_results.md) for the completed comparison.
 
 The reference contains 1,065 buyers and 3,428 distinct target pairs from 3,803 cohort source rows. The other 18,935 recipients still receive recommendations but are excluded from target-based metric means. All target pairs remain in denominators, including those absent from the 300 candidates.
 
@@ -23,8 +23,8 @@ The reference contains 1,065 buyers and 3,428 distinct target pairs from 3,803 c
 - 2,533 informative fitting groups; 759,900 candidate rows; 31 features.
 - LambdaRank; learning rate 0.05; leaves 31; depth 8; minimum leaf examples 100; L2=1; seed 42.
 - Maximum 1,000 iterations; full-reference validation NDCG@12 stopping with patience 50; selected iteration 16.
-- Measured fitting time: 15.88 s. Measured full validation scoring time: 0.65 s. These are local measurements, not serving-latency benchmarks or process peak-memory measurements.
-- Native save/reload predictions checked numerically; MLflow run `ad9a6d63d33245a68346b43d986d80a6`.
+- Measured fitting time: 16.72 s. Measured full validation scoring time: 0.61 s. These are local measurements, not serving-latency benchmarks or process peak-memory measurements.
+- Native save/reload predictions checked numerically; MLflow run `c7c8605903f448a6809877b742c774de`.
 
 ## Diagnostic evidence
 
@@ -34,6 +34,6 @@ Full local evidence is stored under `data/processed/weekly_v1/first_ranker/`: mo
 
 ## Remaining evidence and limitations
 
-Hyperparameter search, SHAP examples, controlled ablations, customer-bootstrap uncertainty, final selection/refit and intermediate V1 performance are not completed. No final-confirmation ranking outcomes have been evaluated. Development exposure makes the V1 period retrospective; see [evaluation strategy](evaluation.md).
+Hyperparameter search is complete in notebook 06. SHAP examples, controlled ablations, customer-bootstrap uncertainty, final selection/refit and intermediate V1 performance remain pending. No final-confirmation ranking outcomes have been evaluated. Development exposure makes the V1 period retrospective; see [evaluation strategy](evaluation.md).
 
 The initial ranker has the highest point estimate in this comparison. Customer-bootstrap uncertainty and the declared controlled comparisons remain necessary before a final selection claim. Do not attribute a causal business mechanism to feature importance or infer performance on unseen time periods from this single validation week.

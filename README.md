@@ -10,17 +10,17 @@ The project follows **data foundation → temporal protocol → behavioral EDA �
 
 ## Current milestone
 
-The first learned ranking experiment is complete; controlled hyperparameter comparisons are next.
+Plan stage 7 is complete: the initial ranker and six declared hyperparameter comparisons are recorded. The selected validation candidate now proceeds to stage 8.
 
 - Source diagnostics cover 105,542 articles, 1,371,980 customer records and 31,788,324 purchase rows. Raw files remain unchanged; typed Parquet supports repeatable analysis.
 - The shared calendar defines six historical training weeks, validation, intermediate V1 evaluation and final model confirmation.
 - Behavioral EDA covers temporal/category activity, customer histories, repeat delays, popularity and top-seller renewal, category/colour breadth and affinities, prices and channels.
 - A fixed future-independent cohort contains 20,000 customers. Candidates combine 30 personal articles, global top 100, three preferred types × 50, and 28-day popularity fill to 300.
 - Historical preparation stores 36,000,000 labelled candidate rows across 120,000 groups. Informative fitting uses 2,533 complete groups / 759,900 rows and 31 features.
-- The initial LambdaRank configuration uses at most 1,000 iterations and early stopping on complete-reference validation NDCG@12. Selected iteration: 16.
+- All six LambdaRank configurations use at most 1,000 iterations and full-reference validation NDCG@12 stopping with patience 50. The selected validation candidate uses 63 leaves, minimum 20 examples per leaf and iteration 8; the initial 31/100 experiment selected iteration 16.
 - Native model reload checks, verified Parquet exports, MLflow recording, complete-target comparisons and paired/history diagnostics are implemented.
 
-## Initial validation results
+## Validation results
 
 | Method | MAP@12 | Recall@12 | NDCG@12 |
 |---|---|---|---|
@@ -28,8 +28,9 @@ The first learned ranking experiment is complete; controlled hyperparameter comp
 | preferred_product_types | 0.005346 | 0.014352 | 0.009923 |
 | recent_purchases_180d | 0.025445 | 0.055198 | 0.036811 |
 | lightgbm_initial | 0.027023 | 0.056514 | 0.038934 |
+| lightgbm_leaves_63_min_20 | **0.032710** | 0.059368 | 0.044496 |
 
-All methods recommend twelve distinct articles to the same 20,000 recipients. Target-based means include all 1,065 validation buyers and all 3,428 distinct targets, including retrieval misses. These are retrospective validation results, not an independent-test or business-impact claim. See [results and limitations](docs/first_ranker_results.md).
+All methods recommend twelve distinct articles to the same 20,000 recipients. Target-based means include all 1,065 validation buyers and all 3,428 distinct targets, including retrieval misses. These are retrospective validation results, not an independent-test or business-impact claim. The candidate is selected by MAP@12, while the 63/100 configuration leads NDCG and Recall. See [tuning results](docs/lightgbm_tuning_results.md) and [initial results](docs/first_ranker_results.md).
 
 ## Temporal contract
 
@@ -51,6 +52,7 @@ Intervals include their start and exclude their end. Table counts cover all sour
 | [03 Candidates and features](notebooks/03_candidates_and_features.ipynb) | Fixed cohort, retrieval, three baselines, feature contract and validation export |
 | [04 Training dataset](notebooks/04_training_dataset.ipynb) | Six historical target weeks, labels, group audit and aligned fitting inputs |
 | [05 Initial LightGBM](notebooks/05_lightgbm_ranker.ipynb) | Planned initial fit, learning curve, full-reference comparison and diagnostics |
+| [06 LightGBM tuning](notebooks/06_lightgbm_tuning.ipynb) | Six declared configurations, common-input checks, MAP heatmap and candidate selection |
 
 Reusable computations live under `src/atelier_ai/`; synthetic tests under `tests/`; configuration under `configs/`. Raw data, prepared tables, generated figures, models and MLflow storage stay outside Git. Executed notebooks contain portable static figures alongside interactive Plotly outputs.
 
@@ -83,11 +85,10 @@ Tests use synthetic data and do not need competition files. For the local MLflow
 
 ## Next work
 
-1. Compare the six planned LightGBM configurations using full-reference validation MAP@12.
-2. Complete native SHAP examples, declared feature ablations, successes/failures, uncertainty and timings.
-3. Freeze the selected method and iteration budget; refit a selected learned configuration on training plus validation, then report intermediate V1 performance with its exposure limitations.
-4. Package the selected system with DVC, FastAPI, Streamlit, Docker Compose and synthetic CI.
-5. Compare PyTorch under common candidates/periods/metrics before opening final confirmation; later add GCP and the advisor copilot.
+1. Complete stage-8 diagnostics for the selected candidate: native SHAP examples, declared feature ablations, successes/failures, uncertainty and timings.
+2. Freeze the selected method and iteration budget; refit a selected learned configuration on training plus validation, then report intermediate V1 performance with its exposure limitations.
+3. Package the selected system with DVC, FastAPI, Streamlit, Docker Compose and synthetic CI.
+4. Compare PyTorch under common candidates/periods/metrics before opening final confirmation; later add GCP and the advisor copilot.
 
 ## Documentation and limits
 
@@ -97,6 +98,7 @@ Tests use synthetic data and do not need competition files. For the local MLflow
 - [Training protocol](docs/training_protocol.md)
 - [Feature dictionary](docs/feature_dictionary.md)
 - [Initial ranking results](docs/first_ranker_results.md)
+- [Controlled LightGBM tuning](docs/lightgbm_tuning_results.md)
 - [Methodological decisions](docs/methodological_decisions.md)
 - [Behavioral EDA summary](docs/eda_summary.md)
 - [Data card](docs/data_card.md)

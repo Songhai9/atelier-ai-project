@@ -16,7 +16,7 @@ The sequence is explanatory notebooks → reusable functions → reproducible pi
 | 4. Behavioral EDA | Questions, full-scope aggregates, figures, hypotheses and limits | Notebook 02; `docs/eda_summary.md` |
 | 5. Retrieval and features | Historical candidates and feature dictionary | Notebook 03; `recommendation_features.py` |
 | 6. Simple references | Popularity, preferred types, recent purchases; candidate coverage | Notebook 03; complete-reference validation |
-| 7. LightGBM | Initial ranker, then controlled six-configuration search and MLflow | Notebook 04 prepares groups; notebook 05 completes the initial ranker; search remains next |
+| 7. LightGBM | Initial ranker, then controlled six-configuration search and MLflow | Completed: notebook 04 prepares groups, notebook 05 records the initial ranker, notebook 06 records all six configurations and the stage-8 candidate |
 | 8. Explain and select | Importance, SHAP, ablations, robustness, final refit and V1 assessment | Initial importance and paired/history diagnostics available; remaining work listed below |
 
 Notebook numbers identify the learning sequence and are not a second definition of the original plan stages. The five French revision sheets follow this notebook sequence.
@@ -45,7 +45,7 @@ Feature families cover customer activity/recency and category diversity; article
 
 Use LambdaRank with customer/week groups and binary observed-purchase labels. Keep target purchases absent from candidates in the evaluation reference. Initial configuration: learning rate 0.05, maximum 1,000 iterations, 31 leaves, depth 8, minimum 100 examples per leaf, L2=1 and seed 42.
 
-Next compare leaves {15,31,63} × minimum examples {20,100}: six declared configurations. Stop on validation NDCG@12 with patience 50; choose using MAP@12 on complete recommendation references. MLflow records configuration, identities, metrics, duration, model and figures.
+The six declared combinations of leaves {15,31,63} × minimum examples {20,100} are complete. All stop on full-reference validation NDCG@12 with patience 50. Selection by complete-reference MAP@12 retains 63 leaves / minimum 20 and iteration 8 as the stage-8 candidate. MLflow records configuration, identities, metrics, duration, model and figures. See [tuning results](lightgbm_tuning_results.md).
 
 Stage 8 requires native SHAP examples, gain importance, ablations without recency/affinities/popularity, successes and failures, MAP/Recall/NDCG@12, candidate/catalogue coverage, recommended category diversity, activity/history segments and generation/scoring durations. Bootstrap customers for MAP uncertainty. Freeze choices and iteration budget, refit a selected learned model on training plus validation, then assess V1 without tuning on its outcomes. Retain the simpler method on an exact tie; a baseline can serve if it leads.
 

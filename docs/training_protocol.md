@@ -34,16 +34,16 @@ LambdaRank, learning rate 0.05, at most 1,000 iterations, 31 leaves, maximum dep
 
 The initial run selected iteration 16. Training uses the six historical weeks only. Save a native model and verify reloaded predictions numerically. This run is not the final train-plus-validation refit.
 
-The planned search is six combinations of leaves {15,31,63} × minimum examples {20,100}, with common candidates, features, metric conventions and stopping. Final choice uses complete-reference MAP@12; model capacity is not chosen from test outcomes.
+The six combinations of leaves {15,31,63} × minimum examples {20,100} have been executed with common candidates, features, metric conventions and stopping. Complete-reference validation MAP@12 selects 63/20 with best iteration 8 as the reference candidate for stage 8. The 63/100 configuration leads validation NDCG and Recall, but not the declared selection metric. See [tuning results](lightgbm_tuning_results.md).
 
 ## Artifacts and reproducibility
 
 `preparation.py` creates typed local Parquet sources. Feature exports use customer-complete batches of 500 with explicit SQL types, exact round-trip checks, per-file checksums, source/cohort/configuration/code identities and distinct output fingerprints. Matching complete exports are verified before reuse.
 
-The active run indices live under `data/processed/weekly_v1/`: `validation.json`, `training.json` and `first_ranker/manifest.json`. Each selected dataset is identified explicitly rather than by an old hardcoded export directory. Raw and derived data and models remain Git-ignored.
+The active run indices live under `data/processed/weekly_v1/`: `validation.json`, `training.json`, `first_ranker/manifest.json`, `ranker_search/manifest.json` and `ranker_search/selected_candidate.json`. Each selected dataset is identified explicitly rather than by an old hardcoded export directory. Raw and derived data and models remain Git-ignored.
 
-MLflow records the initial run locally, including configuration, identities, metrics, duration, model and learning data. The run ID is `ad9a6d63d33245a68346b43d986d80a6`. The manifest records the Git base and hashes of the working-tree source files actually used; a Git base alone is not presented as proof of a clean training tree.
+MLflow records the initial experiment and all six search trials locally, including configuration, identities, metrics, duration, models, learning data and the comparison figure. Run IDs are read from the corresponding manifests. The selected search run is `b76ec3a4783c4b7296a07321d032df31`. The manifest records the Git base and hashes of the working-tree source files actually used; a Git base alone is not presented as proof of a clean training tree.
 
 ## Next model work
 
-Complete the six-configuration comparison, SHAP examples and declared ablations; assess paired/history diagnostics, timings and customer-bootstrap uncertainty. Freeze selection and iteration budgets before a final train-plus-validation refit and V1 evaluation. Final confirmation remains reserved for a frozen LightGBM/PyTorch comparison. See [evaluation strategy](evaluation.md) for prior development exposure and interpretation limits.
+Stage 7 is complete. Next, use the 63/20 candidate for stage-8 SHAP examples and declared ablations; assess paired/history diagnostics, timings and customer-bootstrap uncertainty. Freeze selection and iteration budgets before a final train-plus-validation refit and V1 evaluation. Final confirmation remains reserved for a frozen LightGBM/PyTorch comparison. See [evaluation strategy](evaluation.md) for prior development exposure and interpretation limits.
