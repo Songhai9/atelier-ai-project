@@ -6,7 +6,7 @@ The three required CSV files have been acquired locally. File sizes and SHA-256 
 
 Complete-file structural and data-quality diagnostics have been executed. Temporal coverage and the initial local evaluation windows are established. Calculations, aggregate outputs and figures are available in the [analysis notebook](../notebooks/01_data_foundation.ipynb); reusable functions and automated tests are included in the repository.
 
-Behavioural EDA, feature engineering and model evaluation remain subsequent work.
+Behavioral EDA, historical candidate features, reference methods and the first learned ranking experiment are implemented. Typed Parquet tables preserve source records and exact string identifiers; derived data and models remain local.
 
 ## Source
 
@@ -91,17 +91,18 @@ Transactions cover 2018-09-20 through 2020-09-22, inclusive, with records on all
 
 All intervals below have an inclusive start and an exclusive end.
 
-| Period | Start inclusive | End exclusive | Source transaction rows |
+| Role | Start inclusive | End exclusive | Source transaction rows |
 |---|---|---|---:|
-| Pre-validation history | 2018-09-20 | 2020-09-09 | 31,292,772 |
-| Validation target | 2020-09-09 | 2020-09-16 | 255,241 |
-| Local test target | 2020-09-16 | 2020-09-23 | 240,311 |
+| EDA source-history pool | 2018-09-20 | 2020-09-02 | 31,028,115 |
+| Validation | 2020-09-02 | 2020-09-09 | 264,657 |
+| Intermediate V1 evaluation | 2020-09-09 | 2020-09-16 | 255,241 |
+| Final LightGBM/PyTorch confirmation | 2020-09-16 | 2020-09-23 | 240,311 |
 
 Counts retain repeated source rows. The history pool is not an already constructed supervised training table.
 
-Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Completed behavioral EDA used for model-design decisions covers pre-validation history only. Its reconciled findings and testable modeling hypotheses are recorded in the [behavioral EDA summary](eda_summary.md) and [behavioral analysis notebook](../notebooks/02_behavioral_eda.ipynb).
+Transaction-derived features and candidates must precede the prediction cutoff. Historical training target windows must end no later than validation starts. Completed behavioral EDA used for model-design decisions covers pre-validation history only. Its findings and testable modeling hypotheses are recorded in the [behavioral EDA summary](eda_summary.md) and [behavioral analysis notebook](../notebooks/02_behavioral_eda.ipynb).
 
-For V1, selected learned parameters remain fixed between validation and test, while historical features and candidates are refreshed at each cutoff. See the [evaluation strategy](evaluation.md) for the complete protocol.
+After selection, freeze modelling choices and iteration budget before the planned final refit on training plus validation. Recompute historical features and candidates at each prediction cutoff. Development exposure and the reserved final confirmation are documented explicitly. See the [evaluation strategy](evaluation.md) for the complete protocol.
 
 ## Metadata Availability
 
@@ -113,7 +114,7 @@ Time-varying attributes are not assumed safe for historical modelling merely bec
 
 Access is subject to the competition rules. The rules describe non-commercial, academic and educational uses and restrict redistribution of competition data.
 
-Source files are excluded from Git. Published notebook outputs contain structural diagnostics and aggregate summaries rather than source transaction or customer records. Future outputs and images require the same publication review.
+Source files are excluded from Git. Published notebooks focus on diagnostics, aggregate summaries and modelling evidence. Raw files and full per-customer recommendation/target exports remain excluded from Git.
 
 ## Interpretation Limits and Remaining Decisions
 
@@ -121,7 +122,7 @@ Source files are excluded from Git. Published notebook outputs contain structura
 - Stock availability is not established by historical purchase records.
 - `FN`, `Active`, price units, sales-channel labels and metadata observation dates remain unresolved.
 - Imputation, transformations and model-input eligibility require decisions during feature development.
-- One validation week and one local test week provide an initial assessment; wider temporal robustness remains to be evaluated.
+- A retrospective validation, intermediate V1 evaluation and reserved final confirmation have distinct roles; wider temporal robustness remains to be evaluated.
 - Offline results will not establish performance in luxury retail or measurable business impact.
 
 ## References

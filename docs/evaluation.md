@@ -1,146 +1,64 @@
-# Atelier AI — Evaluation Strategy
+# Atelier AI - Evaluation Strategy
 
-## Objective
+## Task and evidence scope
 
-Evaluate whether personalised recommendations retrieve and rank future observed purchases more effectively than simple reference methods.
+Recommend twelve distinct article IDs per customer at a historical prediction cutoff. Relevance is the set of distinct articles purchased in the next seven days. Evaluate predictive performance relative to simple methods; offline metrics do not establish sales, conversion or advisor time savings.
 
-The evaluation focuses on historical predictive performance. Business impact requires a separate assessment under actual usage conditions.
+## Calendar
 
-## Primary Metric
+The shared configuration is `configs/temporal.yaml`. All intervals include their start and exclude their end.
 
-**MAP@12 — Mean Average Precision at 12** is the primary model-selection criterion.
-
-Average Precision is computed for each customer–target-week pair, considering the first twelve recommendations. Precision is accumulated at positions containing relevant products and normalised by the smaller of twelve and the number of distinct purchased products.
-
-MAP@12 averages these scores with equal weight across eligible customer–week pairs.
-
-This choice follows the evaluation metric used in the [H&M Personalized Fashion Recommendations benchmark](https://www.kaggle.com/c/h-and-m-personalized-fashion-recommendations/).
-
-## Evaluation Conventions
-
-- Relevance is defined by a purchase observed during the seven-day target period.
-- Repeated purchases of the same product count as one relevant product for ranking evaluation.
-- Recommendation lists contain distinct product identifiers.
-- All target purchases remain in the evaluation, including products absent from the candidate set.
-- Customer–week pairs without target purchases are excluded from MAP@12 and Recall@12.
-- The proportion of excluded pairs is reported.
-- Recommendations remain available for customers without observed target purchases.
-- Ranking scores are not interpreted as calibrated purchase probabilities.
-
-## Baseline Methods
-
-Notebook 05 compares the first learned model with:
-
-1. **Recent popularity:** products ranked by recent global purchase activity.
-2. **Category preference:** popular products within the customer’s preferred categories.
-3. **Recent purchases:** previously purchased products, completed with recent popular products.
-
-All four methods are evaluated using the same customer cohort, target period and metric definitions.
-
-## Supporting Diagnostics
-
-| Diagnostic | Purpose |
-|---|---|
-| Recall@12 | Measure the proportion of distinct target purchases retrieved in the recommendation list |
-| Candidate coverage | Measure the proportion of target purchases present in the generated candidate set |
-| Catalogue coverage | Measure the proportion of eligible catalogue products recommended across the evaluated cohort |
-
-Ranking quality will also be examined across customer-history segments to identify where personalisation helps or fails.
-
-## Temporal Protocol
-
-The acquired transaction file covers 2018-09-20 through 2020-09-22.
-Transactions occur on all 734 calendar dates in that observed range.
-
-The initial local evaluation uses seven-day prediction targets.
-
-All intervals have an inclusive start and an exclusive end.
-
-| Period | Start inclusive | End exclusive | Source transaction rows |
+| Role | Start inclusive | End exclusive | Source transaction rows |
 |---|---|---|---:|
-| Pre-validation history | 2018-09-20 | 2020-09-09 | 31,292,772 |
-| Validation target | 2020-09-09 | 2020-09-16 | 255,241 |
-| Local test target | 2020-09-16 | 2020-09-23 | 240,311 |
+| EDA source-history pool | 2018-09-20 | 2020-09-02 | 31,028,115 |
+| Validation | 2020-09-02 | 2020-09-09 | 264,657 |
+| Intermediate V1 evaluation | 2020-09-09 | 2020-09-16 | 255,241 |
+| Final LightGBM/PyTorch confirmation | 2020-09-16 | 2020-09-23 | 240,311 |
 
-Volumes count source transaction rows, including retained repetitions.
-They are not counts of customers, distinct relevance labels or
-supervised training examples.
+The row counts describe the complete source file and retain repetitions. They are not customer counts, orders or supervised examples. Six training cutoffs run weekly from 2020-07-22 to 2020-08-26. Their target windows end no later than validation starts. At each cutoff, recompute history, candidates and features using strictly earlier observations and a 180-day personal lookback.
 
-### Historical Training Examples
+## Populations and metrics
 
-The pre-validation period is a source-history pool.
+The fixed cohort contains 20,000 source customer IDs selected using seeded SHA-256 ordering independently of future purchases. All receive recommendations. Customer/week pairs without target purchases are excluded from MAP, macro Recall and NDCG averages; report their count and share.
 
-Supervised examples will be constructed at historical prediction
-cutoffs. Each example uses features from records strictly before its
-cutoff and relevance from the following seven days.
+For validation [2020-09-02, 2020-09-09), the cohort contains 3,803 source purchase rows, 3,428 distinct customer/article targets and 1,065 target buyers. These counts differ from complete-file weekly counts because they describe the fixed cohort.
 
-Training target windows must end no later than 2020-09-09.
-Learned preprocessing is fitted using eligible training examples only.
+- **AP@12:** accumulate precision at relevant ranks, divided by min(12, the full number of distinct targets).
+- **MAP@12:** equal-weight mean AP over all target buyers; primary selection metric.
+- **Macro Recall@12:** equal-weight mean of hits / all distinct targets per buyer.
+- **Micro Recall@12:** all retrieved customer/article targets / all distinct target pairs.
+- **NDCG@12:** binary discounted gain divided by ideal gain for min(12, the full target count).
+- **Candidate coverage:** retrieved distinct target pairs / all distinct target pairs, including misses.
+- **Catalogue coverage:** distinct recommended articles / articles observed in the declared 180-day global history.
+- **Category diversity:** mean number of distinct broad product groups in each recipient's twelve recommendations.
 
-The initial historical cutoffs are 2020-08-12, 2020-08-19, 2020-08-26 and 2020-09-02. Each has a seven-day target and cutoff-specific historical candidates/features. For initial grouped ranker fitting, retain complete training groups only when candidate labels contain both 0 and 1. This target-dependent selection is restricted to historical training; it does not change validation/test recipients, reference targets or metric denominators. See the [training protocol](training_protocol.md) for the group audit and input contract.
+Repeated source purchases do not create duplicate relevant articles. Never restrict references to retrieved candidates or add missed targets to a candidate pool. An evaluated buyer with all purchases missed receives zero ranking hits. Validate complete recipient coverage and twelve distinct recommendations before computing target-based metrics.
 
+## Baselines and learned experiment
 
-### Validation and Test Execution
+Compare recent global popularity, popularity in three preferred product types, recent personal purchases with popularity fill, and the initial LambdaRank model. Use identical cohort, target period and metric definitions. A baseline remains eligible for eventual serving.
 
-Methods and hyperparameters are selected using the validation target.
+The initial learned model uses the planned starting configuration and validation NDCG stopping with patience 50. Its stopping metric uses full target counts for ideal gain and excludes nonbuyers; it does not treat buyers with completely missed retrieval as perfect empty groups. Six-configuration tuning and final selection remain subsequent work.
 
-For V1, selected learned parameters remain fixed between validation
-and test. They are not refitted on validation targets.
+## Selection, fitting and reserved outcomes
 
-Historical features and candidates are recomputed at each prediction
-cutoff using only earlier observations. Validation-week transactions
-are therefore available as history at the 2020-09-16 test cutoff.
+Select by validation MAP@12. Retain the simpler method on an exact tie. Freeze model choices and iteration budget, then refit a selected learned configuration on historical training plus validation. Neither the V1 nor confirmation targets enter this fitting or early stopping.
 
-Predictions issued at the beginning of a target week are not updated
-using purchases inside that week.
+After freezing V1 choices, report intermediate V1 outcomes without revising that reported configuration. Freeze the LightGBM/PyTorch comparison and both fitting procedures before evaluating final confirmation. The current notebooks compute neither V1 nor final-confirmation recommendation performance.
 
-Test results are inspected after model-selection choices are frozen
-and are not used to revise those choices.
+Predictions issued at a week's start do not incorporate purchases from inside that week. Earlier validation purchases may become historical inputs at later cutoffs without being future inputs.
 
-### Availability and Evaluation Scope
+## Interpretation limits
 
-Metadata fields require evidence of historical availability or an
-explicit, justified stability assumption before feature use.
+This is a retrospective local benchmark. The weeks beginning 2020-09-02 and 2020-09-09 were accessed during development. The intermediate V1 period is therefore not an untouched independent test. Recomputing under fixed chronological boundaries does not erase that exposure. Final-week ranking performance remains reserved for the frozen LightGBM/PyTorch comparison.
 
-Target purchases absent from the candidate set remain in evaluation.
-Cold-start cases are reported rather than silently removed.
+Snapshot article classifications are used under an explicit stability assumption; their observation dates and stock availability are not established. Customer snapshot attributes with unresolved historical availability are excluded from model inputs. Price units and channel business labels remain unresolved. Report cold-history cases rather than silently deleting them.
 
-This test is a local historical holdout, separate from the competition's
-hidden test data.
+The source is separate from the competition's hidden test data. One local week provides limited temporal evidence. SHAP is explanatory, not causal. Customer bootstrap uncertainty, additional declared comparisons and broader robustness remain part of stage 8.
 
-One validation week and one test week provide an initial assessment.
-Broader temporal robustness requires additional historical cutoffs.
+## Evidence
 
-Coverage calculations and boundary definitions are documented in the
-[analysis notebook](../notebooks/01_data_foundation.ipynb).
-
-## Model Selection
-
-The selected system is the method with the highest validation MAP@12. In the event of an exact tie, the simpler method is retained.
-
-A baseline remains eligible for serving if the learned model does not improve the primary validation metric.
-
-Test results are reported without using them to revise the selected configuration.
-
-## Interpretation of Success
-
-Predictive success is assessed relative to the baseline methods, with supporting diagnostics and uncertainty reported alongside the primary metric.
-
-Functional evaluation will separately assess recommendation validity, response latency and the advisor workflow.
-
-Improved offline ranking metrics do not establish increased sales, conversion or reduced preparation time. Those outcomes require dedicated usage studies or experiments.
-
-## Implemented full-reference evaluation (stage 5)
-
-`ranking_metrics.py` validates complete recipient coverage and distinct top-k lists, including recipients without target purchases. It computes per-buyer AP@12 and Recall@12 against the full distinct target set. Buyers whose purchases are absent from all candidates remain eligible and receive zero hits. No target reference is restricted to retrieved articles.
-
-- **MAP@12:** equal-weight mean AP across the 1,015 validation buyers; AP's denominator is `min(12, full distinct target count)` for that buyer.
-- **Macro Recall@12:** equal-weight mean of each buyer's hits divided by their full distinct target count.
-- **Micro Recall@12:** total retrieved customer-article targets divided by all 3,073 distinct customer-article targets. This is a diagnostic separate from the macro mean.
-- **Excluded share:** 18,985 / 20,000 recipients = 94.925% have no observed target purchase and are excluded from target-based averages. All 20,000 still receive recommendations.
-
-The validation target is `[2020-09-09, 2020-09-16)`. Its cohort reference retains 3,454 source transaction rows and separately deduplicates them to 3,073 relevant customer-article pairs. Repeated source transactions are not interpreted as separate relevant articles or as orders.
-
-Paired diagnostics align model and baseline scores by the same 1,015 buyers. History segments use observed purchases in `[2020-03-13, 2020-09-09)`, not lifetime customer tenure. Segment MAP differences are weighted by segment buyer count when reconciling the overall difference.
-
-The first comparison and export identities are recorded in [first-ranker results](first_ranker_results.md). Recent purchases leads this comparison; this does not establish that it will remain best after further declared validation experiments. Catalogue coverage and broader temporal robustness are not established by this first learned experiment. Local-test outcomes remain unevaluated.
+- [Initial results](first_ranker_results.md)
+- [Training contract](training_protocol.md)
+- [Feature definitions](feature_dictionary.md)
+- [Reference plan](implementation_plan.md)
