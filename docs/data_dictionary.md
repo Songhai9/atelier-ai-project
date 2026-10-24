@@ -177,3 +177,8 @@ with unsupported assumptions.
 - [Data card](data_card.md)
 - [Acquisition manifest](data_manifest.json)
 - [Notebook: inspected structure and diagnostics](../notebooks/01_data_foundation.ipynb)
+
+
+## Derived Ranking Features
+
+The 31 historical model features and their missing-value policies are defined in the [feature dictionary](feature_dictionary.md). These derived measurements are distinct from the 37 acquired source fields.

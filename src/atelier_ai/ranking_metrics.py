@@ -1,6 +1,8 @@
 """Ranking metrics evaluated against complete observed target sets."""
 
+from math import log2
 import pandas as pd
+
 
 def score_recommendation_list(
     relevant_articles,
@@ -32,7 +34,14 @@ def score_recommendation_list(
         "n_hits": n_hits,
         "ap_at_k": precision_sum / min(k, len(relevant)),
         "recall_at_k": n_hits / len(relevant),
+        "ndcg_at_k": sum(
+            1 / log2(rank + 1)
+            for rank, article in enumerate(predictions, 1)
+            if article in relevant
+        )
+        / sum(1 / log2(rank + 1) for rank in range(1, min(k, len(relevant)) + 1)),
     }
+
 
 def evaluate_recommendations(
     recommendation_lists,
@@ -51,15 +60,16 @@ def evaluate_recommendations(
         raise ValueError("Recommendations must cover exactly all recipients.")
 
     reference = {
-        customer: set(articles)
-        for customer, articles in relevant_articles.items()
+        customer: set(articles) for customer, articles in relevant_articles.items()
     }
     if (
         not reference
         or not set(reference).issubset(set(ids))
         or any(not articles for articles in reference.values())
     ):
-        raise ValueError("Reference must contain nonempty target sets for cohort buyers.")
+        raise ValueError(
+            "Reference must contain nonempty target sets for cohort buyers."
+        )
 
     top_lists = {}
     for customer in ids:
@@ -68,16 +78,18 @@ def evaluate_recommendations(
             raise ValueError("Every recipient needs k distinct recommendations.")
         top_lists[customer] = predictions
 
-    customer_scores = pd.DataFrame([
-        {
-            "customer_id": customer,
-            **score_recommendation_list(
-                reference[customer], top_lists[customer], k=k
-            ),
-        }
-        for customer in ids
-        if customer in reference
-    ])
+    customer_scores = pd.DataFrame(
+        [
+            {
+                "customer_id": customer,
+                **score_recommendation_list(
+                    reference[customer], top_lists[customer], k=k
+                ),
+            }
+            for customer in ids
+            if customer in reference
+        ]
+    )
 
     excluded_customers = len(ids) - len(customer_scores)
     target_pairs = int(customer_scores["n_target_articles"].sum())
@@ -94,6 +106,7 @@ def evaluate_recommendations(
             "retrieved_target_pairs": retrieved_pairs,
             "map_at_k": float(customer_scores["ap_at_k"].mean()),
             "recall_at_k": float(customer_scores["recall_at_k"].mean()),
+            "ndcg_at_k": float(customer_scores["ndcg_at_k"].mean()),
             "micro_recall_at_k": retrieved_pairs / target_pairs,
         },
     }

@@ -1,386 +1,531 @@
-"""Historical candidate retrieval and feature computation shared across cutoffs.
+"""Historical retrieval and numeric feature definitions for fashion ranking."""
 
-Core functions are extracted unchanged from notebook 03's validated prototype.
-No target labels enter these functions.
-"""
-
-from collections import Counter
-from collections.abc import Iterable
+import numpy as np
 import pandas as pd
-from atelier_ai.temporal import interval_mask
 
+FEATURE_DEFINITIONS = [
+    (
+        "customer_history_rows",
+        "customer",
+        "0",
+        "Purchase rows in the preceding 180 days",
+    ),
+    (
+        "customer_distinct_articles",
+        "customer",
+        "0",
+        "Distinct articles in the preceding 180 days",
+    ),
+    (
+        "customer_recency_days",
+        "customer",
+        "NaN",
+        "Days since the last observed purchase",
+    ),
+    (
+        "customer_has_history",
+        "customer",
+        "False",
+        "Any purchase in the preceding 180 days",
+    ),
+    ("customer_rows_7d", "customer", "0", "Purchase rows in the preceding 7 days"),
+    ("customer_rows_28d", "customer", "0", "Purchase rows in the preceding 28 days"),
+    ("customer_rows_90d", "customer", "0", "Purchase rows in the preceding 90 days"),
+    (
+        "customer_distinct_product_types",
+        "customer",
+        "0",
+        "Distinct product types in 180-day history",
+    ),
+    (
+        "customer_distinct_colours",
+        "customer",
+        "0",
+        "Distinct colour groups in 180-day history",
+    ),
+    (
+        "article_recent_rows",
+        "article",
+        "0",
+        "Global purchase rows in the preceding 7 days",
+    ),
+    ("article_recent_rank", "article", "NaN", "Global 7-day rank; ties use article ID"),
+    (
+        "article_rows_28d",
+        "article",
+        "0",
+        "Global purchase rows in the preceding 28 days",
+    ),
+    (
+        "article_popularity_trend",
+        "article",
+        "0",
+        "7-day rows divided by one quarter of 28-day rows",
+    ),
+    (
+        "article_recency_days",
+        "article",
+        "NaN",
+        "Days since last global purchase within 180 days",
+    ),
+    (
+        "customer_group_rows",
+        "affinity",
+        "0",
+        "Customer rows for the candidate broad product group",
+    ),
+    (
+        "customer_group_share",
+        "affinity",
+        "0",
+        "Broad-group rows divided by customer history rows",
+    ),
+    (
+        "customer_type_share",
+        "affinity",
+        "0",
+        "Product-type rows divided by customer history rows",
+    ),
+    (
+        "customer_colour_share",
+        "affinity",
+        "0",
+        "Colour-group rows divided by customer history rows",
+    ),
+    (
+        "customer_article_rows",
+        "interaction",
+        "0",
+        "Customer purchase rows for the candidate article",
+    ),
+    (
+        "customer_article_recency_days",
+        "interaction",
+        "NaN",
+        "Days since the customer last bought this article",
+    ),
+    (
+        "has_purchased_article",
+        "interaction",
+        "False",
+        "Candidate article observed in customer history",
+    ),
+    (
+        "prediction_weekday",
+        "context",
+        "defined",
+        "Weekday of prediction cutoff, Monday=0",
+    ),
+    ("prediction_iso_week", "context", "defined", "ISO week of prediction cutoff"),
+    (
+        "customer_channel_2_share",
+        "context",
+        "0",
+        "History-row share with source channel code 2",
+    ),
+    (
+        "from_history",
+        "retrieval",
+        "False",
+        "In the latest 30 distinct personal articles",
+    ),
+    (
+        "from_category",
+        "retrieval",
+        "False",
+        "In a top-50 proposal from a preferred product type",
+    ),
+    ("from_global", "retrieval", "False", "In the global 7-day top-100 proposal"),
+    ("from_fallback_28d", "retrieval", "False", "Added by the 28-day popularity fill"),
+    (
+        "history_source_rank",
+        "retrieval",
+        "NaN",
+        "Rank in the bounded personal-history proposal",
+    ),
+    (
+        "category_source_rank",
+        "retrieval",
+        "NaN",
+        "Rank in the combined preferred-type proposal",
+    ),
+    ("n_retrieval_sources", "retrieval", "0", "Number of proposal or fill memberships"),
+]
 feature_contract = pd.DataFrame(
-    [
-        ('customer_history_rows', 'customer', '0', 'Observed source purchase rows in customer history'),
-        ('customer_distinct_articles', 'customer', '0', 'Distinct purchased article IDs in customer history'),
-        ('customer_recency_days', 'customer', 'NaN without observed history', 'Days since last observed customer purchase'),
-        ('customer_has_history', 'customer', 'False', 'Any observed customer purchase in the history window'),
-        ('article_recent_rows', 'article', '0 if absent from recent purchases', 'Global source purchase rows for this article in the recent window'),
-        ('article_recent_rank', 'article', 'NaN if absent from recent purchases', 'Global recent popularity rank; count descending, ID ascending'),
-        ('customer_group_rows', 'customer-group', '0', 'Customer historical purchase rows in the candidate product group'),
-        ('customer_group_share', 'customer-group', '0', 'Group rows divided by all customer historical rows'),
-        ('customer_article_rows', 'customer-article', '0', 'Customer historical purchase rows for this article'),
-        ('customer_article_recency_days', 'customer-article', 'NaN without observed purchase', 'Days since this customer last bought this article'),
-        ('has_purchased_article', 'customer-article', 'False', 'Any observed purchase of this article by this customer'),
-        ('from_history', 'retrieval', 'False', 'Article belongs to the bounded history retrieval proposal'),
-        ('from_category', 'retrieval', 'False', 'Article belongs to the bounded dominant-group retrieval proposal'),
-        ('from_global', 'retrieval', 'False', 'Article belongs to global top candidate-budget retrieval proposal'),
-        ('history_source_rank', 'retrieval', 'NaN outside bounded source', 'Position within the bounded history retrieval proposal'),
-        ('category_source_rank', 'retrieval', 'NaN outside bounded source', 'Position within the bounded dominant-group proposal'),
-        ('n_retrieval_sources', 'retrieval', '0 for articles outside every source', 'Number of retrieval proposals containing the article'),
-    ],
-    columns=["feature", "family", "missing_policy", "meaning"],
+    FEATURE_DEFINITIONS, columns=["feature", "family", "missing_policy", "meaning"]
 )
 FEATURE_COLUMNS = feature_contract["feature"].tolist()
-
-EXPECTED_MISSING_FEATURES = [
-    "customer_recency_days", "article_recent_rank", "customer_article_recency_days",
-    "history_source_rank", "category_source_rank",
-]
-
-def aggregate_recent_popularity(
-    chunks: Iterable[pd.DataFrame],
-    *,
-    cutoff,
-    window_days: int,
-) -> pd.DataFrame:
-    """Rank articles by global source-row count in [cutoff - window, cutoff)."""
-    if window_days <= 0:
-        raise ValueError("Popularity window must be positive.")
-    cutoff = pd.Timestamp(cutoff)
-    start = cutoff - pd.Timedelta(days=window_days)
-    if not start < cutoff:
-        raise ValueError("Popularity dates must define a valid interval.")
-
-    article_counts = Counter()
-    for chunk in chunks:
-        dates = pd.to_datetime(chunk["t_dat"], format="%Y-%m-%d", errors="raise")
-        recent_articles = chunk.loc[interval_mask(dates, start, cutoff), "article_id"]
-        article_counts.update(recent_articles.value_counts().to_dict())
-
-    popularity = (
-        pd.Series(article_counts, dtype="int64", name="transaction_rows")
-        .rename_axis("article_id")
-        .reset_index()
-    )
-    popularity["article_id"] = popularity["article_id"].astype("string")
-    return popularity.sort_values(
-        ["transaction_rows", "article_id"], ascending=[False, True]
-    ).reset_index(drop=True)
-
-
-def build_customer_article_history(
-    chunks: Iterable[pd.DataFrame],
-    customer_ids: pd.Index,
-    *,
-    cutoff,
-    window_days: int,
-) -> pd.DataFrame:
-    """Aggregate per-customer article recency and row counts strictly before cutoff."""
-    if window_days <= 0:
-        raise ValueError("History window must be positive.")
-    cutoff = pd.Timestamp(cutoff)
-    start = cutoff - pd.Timedelta(days=window_days)
-    if not start < cutoff:
-        raise ValueError("History dates must define a valid interval.")
-
-    parts = []
-    for chunk in chunks:
-        selected = chunk.loc[
-            chunk["customer_id"].isin(customer_ids),
-            ["t_dat", "customer_id", "article_id"],
-        ].copy()
-        if selected.empty:
-            continue
-        selected["t_dat"] = pd.to_datetime(
-            selected["t_dat"], format="%Y-%m-%d", errors="raise"
-        )
-        selected = selected.loc[interval_mask(selected["t_dat"], start, cutoff)]
-        if not selected.empty:
-            parts.append(selected.groupby(["customer_id", "article_id"], as_index=False).agg(
-                last_purchase_date=("t_dat", "max"),
-                history_transaction_rows=("t_dat", "size"),
-            ))
-
-    if not parts:
-        return pd.DataFrame({
-            "customer_id": pd.Series(dtype="string"),
-            "article_id": pd.Series(dtype="string"),
-            "last_purchase_date": pd.Series(dtype="datetime64[ns]"),
-            "history_transaction_rows": pd.Series(dtype="int64"),
-            "days_since_last_purchase": pd.Series(dtype="int64"),
-        })
-
-    history = pd.concat(parts, ignore_index=True).groupby(
-        ["customer_id", "article_id"], as_index=False
-    ).agg(
-        last_purchase_date=("last_purchase_date", "max"),
-        history_transaction_rows=("history_transaction_rows", "sum"),
-    )
-    history["days_since_last_purchase"] = (cutoff - history["last_purchase_date"]).dt.days
-    return history.sort_values(
-        ["customer_id", "last_purchase_date", "article_id"],
-        ascending=[True, False, True],
-    ).reset_index(drop=True)
-
-
-def attach_product_groups(frame: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
-    """Attach exactly one group per observed article, rejecting unmatched references."""
-    result = frame.merge(
-        metadata[["article_id", "product_group_name"]],
-        on="article_id", how="left", validate="many_to_one", indicator=True,
-    )
-    if len(result) != len(frame) or result["_merge"].ne("both").any():
-        raise ValueError("Product-group join must match every input row without multiplication.")
-    if result["product_group_name"].isna().any() or result["product_group_name"].str.strip().eq("").any():
-        raise ValueError("Matched product groups must not be missing or blank.")
-    return result.drop(columns="_merge")
-
-
-def build_category_tables(history, popularity, metadata):
-    """Return all customer-group affinities, dominant groups and article popularity by group."""
-    grouped_history = attach_product_groups(history, metadata)
-    category_affinities = grouped_history.groupby(
-        ["customer_id", "product_group_name"], as_index=False
-    ).agg(
-        group_transaction_rows=("history_transaction_rows", "sum"),
-        n_history_articles=("article_id", "size"),
-    )
-    category_affinities["group_share"] = (
-        category_affinities["group_transaction_rows"]
-        / category_affinities.groupby("customer_id")["group_transaction_rows"].transform("sum")
-    )
-    preferred_groups = (
-        category_affinities.sort_values(
-            ["customer_id", "group_transaction_rows", "product_group_name"],
-            ascending=[True, False, True],
-        )
-        .drop_duplicates("customer_id")
-        .reset_index(drop=True)
-    )
-    category_popularity = attach_product_groups(popularity, metadata).sort_values(
-        ["product_group_name", "transaction_rows", "article_id"],
-        ascending=[True, False, True],
-    ).reset_index(drop=True)
-    return category_affinities, preferred_groups, category_popularity
-
-
-def combine_candidate_sources(
-    history_articles,
-    category_articles,
-    global_articles,
-    *,
-    budget: int,
-    history_limit: int,
-    category_limit: int,
-) -> tuple[list, dict]:
-    """Union bounded historical sources, then fill globally without target inputs."""
-    if budget <= 0 or min(history_limit, category_limit) < 0:
-        raise ValueError("Budget must be positive and source limits nonnegative.")
-    if history_limit + category_limit > budget:
-        raise ValueError("Source limits exceed the candidate budget.")
-    global_order = list(dict.fromkeys(global_articles))[:budget]
-    if len(global_order) < budget:
-        raise ValueError("Global fallback must supply at least budget distinct articles.")
-    source_orders = [
-        ("history_added", list(dict.fromkeys(history_articles))[:history_limit]),
-        ("category_added", list(dict.fromkeys(category_articles))[:category_limit]),
-        ("global_added", global_order),
-    ]
-    chosen, seen, audit = [], set(), {}
-    for source_name, articles in source_orders:
-        before = len(chosen)
-        for article_id in articles:
-            if len(chosen) == budget:
-                break
-            if article_id not in seen:
-                chosen.append(article_id)
-                seen.add(article_id)
-        audit[source_name] = len(chosen) - before
-    return chosen, audit
-
-
-def prepare_feature_tables(
-    customer_ids, history, popularity, metadata, *, cutoff, history_days,
-    popularity_days, history_limit, category_limit, global_limit,
-) -> dict:
-    """Prepare historical lookups for one declared prediction cutoff."""
-    cutoff = pd.Timestamp(cutoff)
-    if history_days <= 0 or popularity_days <= 0 or min(history_limit, category_limit, global_limit) <= 0:
-        raise ValueError("Feature windows and retrieval limits must be positive.")
-    if not customer_ids.is_unique or history.duplicated(["customer_id", "article_id"]).any():
-        raise ValueError("Customer IDs and historical customer–article keys must be unique.")
-    if not history["customer_id"].isin(customer_ids).all() or not history["history_transaction_rows"].gt(0).all():
-        raise ValueError("History must contain known customers and positive observed counts.")
-    if not interval_mask(history["last_purchase_date"], cutoff - pd.Timedelta(days=history_days), cutoff).all():
-        raise ValueError("History contains dates outside the declared pre-cutoff interval.")
-
-    affinities, dominant, grouped_popularity = build_category_tables(history, popularity, metadata)
-    customer_observed = history.groupby("customer_id", as_index=False).agg(
-        customer_history_rows=("history_transaction_rows", "sum"),
-        customer_distinct_articles=("article_id", "size"),
-        last_purchase_date=("last_purchase_date", "max"),
-    )
-    customers = pd.DataFrame({"customer_id": customer_ids}).merge(
-        customer_observed, on="customer_id", how="left", validate="one_to_one",
-    ).merge(
-        dominant[["customer_id", "product_group_name"]].rename(columns={"product_group_name": "dominant_product_group"}),
-        on="customer_id", how="left", validate="one_to_one",
-    )
-    customers["customer_recency_days"] = (cutoff - customers["last_purchase_date"]).dt.days
-    customers = customers.drop(columns="last_purchase_date")
-
-    recent = popularity.sort_values(["transaction_rows", "article_id"], ascending=[False, True]).reset_index(drop=True)
-    recent = recent.rename(columns={"transaction_rows": "article_recent_rows"})
-    recent["article_recent_rank"] = range(1, len(recent) + 1)
-    grouped_popularity = grouped_popularity.copy()
-    grouped_popularity["_group_popularity_rank"] = grouped_popularity.groupby("product_group_name").cumcount() + 1
-    observed_ids = pd.concat([history["article_id"], popularity["article_id"]], ignore_index=True).drop_duplicates()
-    articles = attach_product_groups(observed_ids.to_frame(name="article_id"), metadata).merge(
-        recent, on="article_id", how="left", validate="one_to_one",
-    ).merge(
-        grouped_popularity[["article_id", "_group_popularity_rank"]],
-        on="article_id", how="left", validate="one_to_one",
-    )
-    groups = affinities[["customer_id", "product_group_name", "group_transaction_rows", "group_share"]].rename(
-        columns={"group_transaction_rows": "customer_group_rows", "group_share": "customer_group_share"}
-    )
-    interactions = history.sort_values(
-        ["customer_id", "last_purchase_date", "article_id"], ascending=[True, False, True],
-    ).copy()
-    interactions["_history_rank"] = interactions.groupby("customer_id").cumcount() + 1
-    interactions["history_source_rank"] = interactions["_history_rank"].where(interactions["_history_rank"].le(history_limit))
-    interactions["customer_article_recency_days"] = (cutoff - interactions["last_purchase_date"]).dt.days
-    interactions = interactions.rename(columns={"history_transaction_rows": "customer_article_rows"})
-    interactions = interactions[["customer_id", "article_id", "customer_article_rows", "customer_article_recency_days", "history_source_rank"]]
-    return {
-        "cutoff": cutoff, "history_days": history_days, "popularity_days": popularity_days,
-        "category_limit": category_limit, "global_limit": global_limit,
-        "customers": customers, "articles": articles, "groups": groups, "interactions": interactions,
-    }
-
-
-def build_candidate_feature_batch(candidate_pairs: pd.DataFrame, tables: dict) -> pd.DataFrame:
-    """Construct historical features without labels, fitted transforms or target inputs."""
-    keys = ["customer_id", "article_id", "cutoff"]
-    if set(candidate_pairs.columns) != set(keys) or candidate_pairs.empty:
-        raise ValueError("A nonempty batch must contain exactly customer_id, article_id and cutoff.")
-    if candidate_pairs[keys].isna().any().any() or candidate_pairs.duplicated(keys).any():
-        raise ValueError("Prediction keys must be present and unique.")
-    if not candidate_pairs["cutoff"].eq(tables["cutoff"]).all():
-        raise ValueError("Candidate cutoff differs from historical feature-table context.")
-    if not candidate_pairs["customer_id"].isin(tables["customers"]["customer_id"]).all():
-        raise ValueError("Candidate batch contains a customer outside the source context.")
-    if not candidate_pairs["article_id"].isin(tables["articles"]["article_id"]).all():
-        raise ValueError("Candidate article lacks a historical source reference.")
-
-    result = candidate_pairs[keys].reset_index(drop=True).merge(
-        tables["customers"], on="customer_id", how="left", validate="many_to_one",
-    ).merge(
-        tables["articles"], on="article_id", how="left", validate="many_to_one",
-    ).merge(
-        tables["groups"], on=["customer_id", "product_group_name"], how="left", validate="many_to_one",
-    ).merge(
-        tables["interactions"], on=["customer_id", "article_id"], how="left", validate="one_to_one",
-    )
-    for column in [
-        "customer_history_rows", "customer_distinct_articles", "article_recent_rows",
-        "customer_group_rows", "customer_article_rows",
-    ]:
-        result[column] = result[column].fillna(0).astype("int64")
-    result["customer_group_share"] = result["customer_group_share"].fillna(0).astype("float64")
-    result["customer_has_history"] = result["customer_distinct_articles"].gt(0)
-    result["has_purchased_article"] = result["customer_article_rows"].gt(0)
-    result["from_history"] = result["history_source_rank"].notna()
-    result["from_category"] = (
-        result["product_group_name"].eq(result["dominant_product_group"]).fillna(False)
-        & result["_group_popularity_rank"].le(tables["category_limit"]).fillna(False)
-    )
-    result["from_global"] = result["article_recent_rank"].le(tables["global_limit"]).fillna(False)
-    result["category_source_rank"] = result["_group_popularity_rank"].where(result["from_category"])
-    result["n_retrieval_sources"] = result[["from_history", "from_category", "from_global"]].sum(axis=1).astype("int64")
-    for column in [
-        "customer_recency_days", "article_recent_rank", "customer_article_recency_days",
-        "history_source_rank", "category_source_rank",
-    ]:
-        result[column] = result[column].astype("float64")
-    audit_columns = keys + ["product_group_name", "dominant_product_group"]
-    if len(result) != len(candidate_pairs):
-        raise ValueError("Feature joins changed the candidate-row grain.")
-    return result[audit_columns + FEATURE_COLUMNS]
-
-
-def build_checked_feature_batch(pairs, tables):
-    batch = build_candidate_feature_batch(pairs, tables)
-    count_columns = [
-        "customer_history_rows", "customer_distinct_articles", "article_recent_rows",
-        "customer_group_rows", "customer_article_rows",
-    ]
-    if not batch[count_columns].ge(0).all().all():
-        raise ValueError("Historical counts must be nonnegative.")
-    if not batch["customer_group_share"].between(0, 1).all():
-        raise ValueError("Group shares must be between zero and one.")
-    if not batch["n_retrieval_sources"].between(1, 3).all():
-        raise ValueError("Every generated candidate must belong to a retrieval source.")
-    for column, observed in [
-        ("customer_recency_days", batch["customer_has_history"]),
-        ("customer_article_recency_days", batch["has_purchased_article"]),
-    ]:
-        if not batch[column].notna().eq(observed).all():
-            raise ValueError(f"Observed-history flag differs from recency availability: {column}")
-        if not batch[column].dropna().between(1, tables["history_days"]).all():
-            raise ValueError(f"Recency lies outside historical bounds: {column}")
-    if not batch["has_purchased_article"].eq(batch["customer_article_rows"].gt(0)).all():
-        raise ValueError("Interaction flag differs from historical purchase count.")
-    if not batch["article_recent_rank"].notna().eq(batch["article_recent_rows"].gt(0)).all():
-        raise ValueError("Recent article rank differs from observed recent purchases.")
-    if not batch["customer_group_rows"].le(batch["customer_history_rows"]).all():
-        raise ValueError("Group frequency exceeds customer historical frequency.")
-    if not batch["customer_article_rows"].le(batch["customer_history_rows"]).all():
-        raise ValueError("Interaction frequency exceeds customer historical frequency.")
-    return batch
-
-
-def build_candidate_pools(customer_ids, history, popularity, metadata, *,
-                          budget=300, history_limit=100, category_limit=100):
-    """Apply notebook 03's historical retrieval policy without target inputs."""
-    _, preferred, grouped_popularity = build_category_tables(history, popularity, metadata)
-    global_order = popularity.sort_values(
-        ["transaction_rows", "article_id"], ascending=[False, True]
-    ).head(budget)["article_id"].tolist()
-    history_orders = (history.sort_values(
-        ["customer_id", "last_purchase_date", "article_id"], ascending=[True, False, True]
-    ).groupby("customer_id", sort=False).head(history_limit)
-        .groupby("customer_id")["article_id"].agg(list).to_dict())
-    category_orders = (grouped_popularity.groupby("product_group_name", sort=False)
-                       .head(category_limit).groupby("product_group_name")["article_id"]
-                       .agg(list).to_dict())
-    dominant = preferred.set_index("customer_id")["product_group_name"].to_dict()
-    pools, audit = {}, []
-    if not customer_ids.is_unique:
-        raise ValueError("Candidate customers must be unique.")
-    for customer_id in customer_ids:
-        pool, additions = combine_candidate_sources(
-            history_orders.get(customer_id, []), category_orders.get(dominant.get(customer_id), []),
-            global_order, budget=budget, history_limit=history_limit, category_limit=category_limit,
-        )
-        if len(pool) != budget or len(set(pool)) != budget:
-            raise ValueError("Candidate pool must meet the distinct candidate budget.")
-        pools[customer_id] = pool
-        audit.append({"customer_id": customer_id, **additions})
-    return pools, pd.DataFrame(audit)
+EXPECTED_MISSING_FEATURES = feature_contract.loc[
+    feature_contract["missing_policy"].eq("NaN"), "feature"
+].tolist()
+BOOLEAN_FEATURES = {
+    "customer_has_history",
+    "has_purchased_article",
+    "from_history",
+    "from_category",
+    "from_global",
+    "from_fallback_28d",
+}
+FLOAT_FEATURES = set(EXPECTED_MISSING_FEATURES) | {
+    "article_popularity_trend",
+    "customer_group_share",
+    "customer_type_share",
+    "customer_colour_share",
+    "customer_channel_2_share",
+}
 
 
 def feature_storage_schema(*, include_label=False):
-    """Declare the same stable storage types as the validation feature export."""
-    result = {"customer_id": "VARCHAR", "article_id": "VARCHAR", "cutoff": "TIMESTAMP",
-              "product_group_name": "VARCHAR", "dominant_product_group": "VARCHAR"}
-    boolean_features = {"customer_has_history", "has_purchased_article", "from_history",
-                        "from_category", "from_global"}
-    floating_features = set(EXPECTED_MISSING_FEATURES) | {"customer_group_share"}
+    result = {
+        "customer_id": "VARCHAR",
+        "article_id": "VARCHAR",
+        "cutoff": "TIMESTAMP",
+        "product_group_name": "VARCHAR",
+        "dominant_product_group": "VARCHAR",
+    }
     for column in FEATURE_COLUMNS:
-        result[column] = ("BOOLEAN" if column in boolean_features else
-                          "DOUBLE" if column in floating_features else "BIGINT")
+        result[column] = (
+            "BOOLEAN"
+            if column in BOOLEAN_FEATURES
+            else "DOUBLE"
+            if column in FLOAT_FEATURES
+            else "BIGINT"
+        )
     if include_label:
         result["label"] = "BIGINT"
+    return result
+
+
+def ordered_union(*sources, limit):
+    """Keep the first occurrence of each article, respecting source priority."""
+    result, seen = [], set()
+    for source in sources:
+        for article in source:
+            if article not in seen:
+                result.append(article)
+                seen.add(article)
+                if len(result) == limit:
+                    return result
+    return result
+
+
+def retrieve_candidates(
+    customer_ids,
+    context,
+    *,
+    budget=300,
+    history_limit=30,
+    global_limit=100,
+    preferred_types=3,
+    per_type=50,
+):
+    """Propose history, global 7-day, preferred types, then fill on 28 days."""
+    ids = pd.Index(customer_ids)
+    if ids.empty or ids.has_duplicates or ids.isna().any():
+        raise ValueError("Candidate customers must be nonempty, unique and present.")
+    if min(budget, history_limit, global_limit, preferred_types, per_type) <= 0:
+        raise ValueError("Candidate limits must be positive.")
+    history, popularity = context["history"], context["popularity"]
+    if not history.empty and (
+        history["t_dat"].ge(context["cutoff"]).any()
+        or history["t_dat"].lt(context["cutoff"] - pd.Timedelta(days=180)).any()
+    ):
+        raise ValueError("History must lie strictly before its cutoff within 180 days.")
+    last = history.groupby(["customer_id", "article_id"], as_index=False)["t_dat"].max()
+    last = last.sort_values(
+        ["customer_id", "t_dat", "article_id"], ascending=[True, False, True]
+    )
+    personal = last.groupby("customer_id", sort=False)["article_id"].agg(list).to_dict()
+    preference = (
+        history.groupby(["customer_id", "product_type_name"])
+        .size()
+        .rename("rows")
+        .reset_index()
+        .sort_values(
+            ["customer_id", "rows", "product_type_name"], ascending=[True, False, True]
+        )
+    )
+    preferred = (
+        preference.groupby("customer_id", sort=False)
+        .head(preferred_types)
+        .groupby("customer_id", sort=False)["product_type_name"]
+        .agg(list)
+        .to_dict()
+    )
+    recent = popularity.loc[popularity["article_recent_rows"].gt(0)].sort_values(
+        ["article_recent_rows", "article_id"], ascending=[False, True]
+    )
+    by_type = (
+        recent.groupby("product_type_name", sort=False)
+        .head(per_type)
+        .groupby("product_type_name", sort=False)["article_id"]
+        .agg(list)
+        .to_dict()
+    )
+    global_order = recent["article_id"].head(global_limit).tolist()
+    fallback = (
+        popularity.loc[popularity["article_rows_28d"].gt(0)]
+        .sort_values(["article_rows_28d", "article_id"], ascending=[False, True])[
+            "article_id"
+        ]
+        .tolist()
+    )
+    if len(fallback) < budget:
+        raise ValueError(
+            "28-day fallback must contain at least budget distinct articles."
+        )
+    pools, memberships, baselines, audits = {}, {}, {}, []
+    for customer in ids:
+        h = personal.get(customer, [])[:history_limit]
+        c = ordered_union(
+            *(by_type.get(t, []) for t in preferred.get(customer, [])),
+            limit=preferred_types * per_type,
+        )
+        before_fill = ordered_union(h, global_order, c, limit=budget)
+        pool = ordered_union(before_fill, fallback, limit=budget)
+        fill = [article for article in pool if article not in set(before_fill)]
+        pools[customer] = pool
+        memberships[customer] = {
+            "history": h,
+            "category": c,
+            "global": global_order,
+            "fallback": fill,
+        }
+        baselines[customer] = {
+            "recent_popularity_7d": ordered_union(global_order, fallback, limit=12),
+            "preferred_product_types": ordered_union(
+                c, global_order, fallback, limit=12
+            ),
+            "recent_purchases_180d": ordered_union(
+                personal.get(customer, []), global_order, fallback, limit=12
+            ),
+        }
+        audits.append(
+            {
+                "customer_id": customer,
+                "history_proposed": len(h),
+                "global_proposed": len(global_order),
+                "category_proposed": len(c),
+                "fallback_added": len(fill),
+                "candidate_rows": len(pool),
+            }
+        )
+    return pools, memberships, baselines, pd.DataFrame(audits)
+
+
+def prepare_feature_tables(customer_ids, context, memberships):
+    """Aggregate historical customer, article and affinity lookups without labels."""
+    history, popularity, cutoff = (
+        context["history"],
+        context["popularity"],
+        context["cutoff"],
+    )
+    customers = pd.DataFrame({"customer_id": pd.Index(customer_ids)})
+    observed = history.groupby("customer_id").agg(
+        customer_history_rows=("article_id", "size"),
+        customer_distinct_articles=("article_id", "nunique"),
+        last_purchase=("t_dat", "max"),
+        customer_distinct_product_types=("product_type_name", "nunique"),
+        customer_distinct_colours=("colour_group_name", "nunique"),
+    )
+    observed["customer_recency_days"] = (cutoff - observed.pop("last_purchase")).dt.days
+    for days in (7, 28, 90):
+        observed[f"customer_rows_{days}d"] = (
+            history.loc[history["t_dat"].ge(cutoff - pd.Timedelta(days=days))]
+            .groupby("customer_id")
+            .size()
+        )
+    observed["customer_channel_2_share"] = (
+        history["sales_channel_id"].eq(2).groupby(history["customer_id"]).mean()
+    )
+    customers = customers.merge(
+        observed.reset_index(), how="left", on="customer_id", validate="one_to_one"
+    )
+    customers["customer_has_history"] = (
+        customers["customer_history_rows"].fillna(0).gt(0)
+    )
+    affinities = {}
+    for column, prefix in [
+        ("product_group_name", "group"),
+        ("product_type_name", "type"),
+        ("colour_group_name", "colour"),
+    ]:
+        affinity = (
+            history.groupby(["customer_id", column]).size().rename("rows").reset_index()
+        )
+        affinity[f"customer_{prefix}_share"] = affinity["rows"] / affinity.groupby(
+            "customer_id"
+        )["rows"].transform("sum")
+        if prefix == "group":
+            dominant = affinity.sort_values(
+                ["customer_id", "rows", column], ascending=[True, False, True]
+            ).drop_duplicates("customer_id")
+            customers = customers.merge(
+                dominant[["customer_id", column]].rename(
+                    columns={column: "dominant_product_group"}
+                ),
+                how="left",
+                on="customer_id",
+                validate="one_to_one",
+            )
+            affinity = affinity.rename(columns={"rows": "customer_group_rows"})
+        else:
+            affinity = affinity.drop(columns="rows")
+        affinities[prefix] = affinity
+    interactions = history.groupby(["customer_id", "article_id"], as_index=False).agg(
+        customer_article_rows=("t_dat", "size"), last_purchase=("t_dat", "max")
+    )
+    interactions["customer_article_recency_days"] = (
+        cutoff - interactions.pop("last_purchase")
+    ).dt.days
+    articles = popularity.copy()
+    articles["article_popularity_trend"] = np.where(
+        articles["article_rows_28d"].gt(0),
+        articles["article_recent_rows"]
+        * 4
+        / articles["article_rows_28d"].clip(lower=1),
+        0,
+    )
+    recent = articles.loc[articles["article_recent_rows"].gt(0)].sort_values(
+        ["article_recent_rows", "article_id"], ascending=[False, True]
+    )
+    ranks = dict(zip(recent["article_id"], range(1, len(recent) + 1)))
+    articles["article_recent_rank"] = articles["article_id"].map(ranks)
+    return {
+        "cutoff": cutoff,
+        "history_days": 180,
+        "customers": customers,
+        "articles": articles,
+        "affinities": affinities,
+        "interactions": interactions,
+        "memberships": memberships,
+    }
+
+
+def build_candidate_feature_batch(candidate_pairs, tables):
+    keys = ["customer_id", "article_id", "cutoff"]
+    if set(candidate_pairs.columns) != set(keys) or candidate_pairs.empty:
+        raise ValueError(
+            "A nonempty batch must contain exactly the three prediction keys."
+        )
+    if (
+        candidate_pairs[keys].isna().any().any()
+        or candidate_pairs.duplicated(keys).any()
+    ):
+        raise ValueError("Candidate keys must be present and unique.")
+    if not candidate_pairs["cutoff"].eq(tables["cutoff"]).all():
+        raise ValueError("Candidate cutoff differs from historical context.")
+    if (
+        not candidate_pairs["customer_id"]
+        .isin(tables["customers"]["customer_id"])
+        .all()
+    ):
+        raise ValueError("Unknown customer in candidate batch.")
+    if not candidate_pairs["article_id"].isin(tables["articles"]["article_id"]).all():
+        raise ValueError(
+            "Candidate article has not been observed in historical context."
+        )
+    result = (
+        candidate_pairs[keys]
+        .reset_index(drop=True)
+        .merge(
+            tables["customers"], on="customer_id", how="left", validate="many_to_one"
+        )
+    )
+    result = result.merge(
+        tables["articles"], on="article_id", how="left", validate="many_to_one"
+    )
+    for prefix, column in [
+        ("group", "product_group_name"),
+        ("type", "product_type_name"),
+        ("colour", "colour_group_name"),
+    ]:
+        result = result.merge(
+            tables["affinities"][prefix],
+            on=["customer_id", column],
+            how="left",
+            validate="many_to_one",
+        )
+    result = result.merge(
+        tables["interactions"],
+        on=["customer_id", "article_id"],
+        how="left",
+        validate="one_to_one",
+    )
+    membership_rows = []
+    for customer, pairs in candidate_pairs.groupby("customer_id", sort=False):
+        sources = tables["memberships"][customer]
+        hr = {a: i + 1 for i, a in enumerate(sources["history"])}
+        cr = {a: i + 1 for i, a in enumerate(sources["category"])}
+        source_sets = {k: set(v) for k, v in sources.items()}
+        for article in pairs["article_id"]:
+            membership_rows.append(
+                {
+                    "customer_id": customer,
+                    "article_id": article,
+                    "from_history": article in source_sets["history"],
+                    "from_category": article in source_sets["category"],
+                    "from_global": article in source_sets["global"],
+                    "from_fallback_28d": article in source_sets["fallback"],
+                    "history_source_rank": hr.get(article, np.nan),
+                    "category_source_rank": cr.get(article, np.nan),
+                }
+            )
+    result = result.merge(
+        pd.DataFrame(membership_rows),
+        on=["customer_id", "article_id"],
+        how="left",
+        validate="one_to_one",
+    )
+    result["has_purchased_article"] = result["customer_article_rows"].fillna(0).gt(0)
+    result["prediction_weekday"] = tables["cutoff"].dayofweek
+    result["prediction_iso_week"] = tables["cutoff"].isocalendar().week
+    result["n_retrieval_sources"] = (
+        result[["from_history", "from_category", "from_global", "from_fallback_28d"]]
+        .fillna(False)
+        .sum(axis=1)
+    )
+    for column in FEATURE_COLUMNS:
+        if column in BOOLEAN_FEATURES:
+            result[column] = result[column].fillna(False).astype(bool)
+        elif column in FLOAT_FEATURES:
+            result[column] = (
+                result[column].astype(float)
+                if column in EXPECTED_MISSING_FEATURES
+                else result[column].fillna(0).astype(float)
+            )
+        else:
+            result[column] = result[column].fillna(0).astype("int64")
+    if len(result) != len(candidate_pairs):
+        raise ValueError("Feature joins changed candidate grain.")
+    return result[list(feature_storage_schema())]
+
+
+def build_checked_feature_batch(pairs, tables):
+    result = build_candidate_feature_batch(pairs, tables)
+    required = [c for c in FEATURE_COLUMNS if c not in EXPECTED_MISSING_FEATURES]
+    if (
+        result[required].isna().any().any()
+        or result[FEATURE_COLUMNS].isin([np.inf, -np.inf]).any().any()
+    ):
+        raise ValueError("Features contain invalid missing or infinite values.")
+    if not result["n_retrieval_sources"].between(1, 4).all():
+        raise ValueError(
+            "Every candidate needs at least one historical retrieval source."
+        )
+    for column in [
+        "customer_group_share",
+        "customer_type_share",
+        "customer_colour_share",
+        "customer_channel_2_share",
+    ]:
+        if not result[column].between(0, 1).all():
+            raise ValueError("Historical shares must lie in [0, 1].")
+    for column in [
+        "customer_recency_days",
+        "customer_article_recency_days",
+        "article_recency_days",
+    ]:
+        if not result[column].dropna().between(1, 180).all():
+            raise ValueError("Recency exceeds the historical window.")
     return result
