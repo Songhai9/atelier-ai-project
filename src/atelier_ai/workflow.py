@@ -339,15 +339,22 @@ def full_reference_ndcg(target_counts, *, budget=300, k=12):
     return metric
 
 
-def fit_first_ranker(root):
-    """Fit the planned initial configuration; leave tuning and test evaluation pending."""
+def fit_ranker_configuration(
+    root,
+    *,
+    num_leaves,
+    min_child_samples,
+    method_name,
+    output_subdirectory,
+):
+    """Fit one declared configuration using the common validation protocol."""
     import lightgbm as lgb
     import mlflow
 
     root = Path(root)
     protocol = load_protocol(root)
     ids = cohort(root)
-    output = root / "data/processed/weekly_v1/first_ranker"
+    output = root / "data/processed/weekly_v1" / output_subdirectory
     output.mkdir(parents=True, exist_ok=True)
     train_index = json.loads(
         (root / "data/processed/weekly_v1/training.json").read_text()
@@ -402,9 +409,9 @@ def fit_first_ranker(root):
         "objective": "lambdarank",
         "learning_rate": 0.05,
         "n_estimators": 1000,
-        "num_leaves": 31,
+        "num_leaves": num_leaves,
+        "min_child_samples": min_child_samples,
         "max_depth": 8,
-        "min_child_samples": 100,
         "reg_lambda": 1.0,
         "random_state": 42,
         "n_jobs": 4,
@@ -454,7 +461,7 @@ def fit_first_ranker(root):
     baseline_methods = json.loads(
         (validation_dir / "baseline_recommendations.json").read_text()
     )
-    methods = {**baseline_methods, "lightgbm_initial": learned}
+    methods = {**baseline_methods, method_name: learned}
     context = build_context(root, ids, protocol["validation_start"])
     pools, _, _, _ = retrieve_candidates(ids, context)
     comparison, evaluations = evaluate_methods(
@@ -480,6 +487,7 @@ def fit_first_ranker(root):
         ["git", "rev-parse", "HEAD"], cwd=root, text=True
     ).strip()
     spec = {
+        "method_name": method_name,
         "parameters": params,
         "early_stopping_rounds": 50,
         "best_iteration": int(model.best_iteration_),
@@ -500,7 +508,7 @@ def fit_first_ranker(root):
     os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
     mlflow.set_tracking_uri((root / "mlruns").as_uri())
     mlflow.set_experiment("atelier-ai-weekly-v1")
-    with mlflow.start_run(run_name="initial-lambdarank") as run:
+    with mlflow.start_run(run_name=method_name) as run:
         mlflow.log_params(params)
         mlflow.log_params(
             {
@@ -509,7 +517,7 @@ def fit_first_ranker(root):
                 "best_iteration": int(model.best_iteration_),
             }
         )
-        for name, value in evaluations["lightgbm_initial"]["summary"].items():
+        for name, value in evaluations[method_name]["summary"].items():
             mlflow.log_metric(name, float(value))
         mlflow.log_metrics({"fit_seconds": fit_seconds, "score_seconds": score_seconds})
         for step, value in enumerate(
@@ -527,3 +535,14 @@ def fit_first_ranker(root):
         spec["mlflow_run_id"] = run.info.run_id
     write_json(output / "manifest.json", spec)
     return spec, comparison
+
+
+def fit_first_ranker(root):
+    """Run the original initial configuration and preserve its output contract."""
+    return fit_ranker_configuration(
+        root,
+        num_leaves=31,
+        min_child_samples=100,
+        method_name="lightgbm_initial",
+        output_subdirectory="first_ranker",
+    )
