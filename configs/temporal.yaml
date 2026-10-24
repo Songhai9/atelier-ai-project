@@ -1,0 +1,10 @@
+protocol_id: "weekly_v1"
+
+training_weeks: 6
+history_days: 180
+horizon_days: 7
+
+validation_start: "2020-09-02"
+v1_evaluation_start: "2020-09-09"
+confirmation_start: "2020-09-16"
+confirmation_end_exclusive: "2020-09-23"

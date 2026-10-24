@@ -58,7 +58,7 @@ def validate_training_schedule(schedule, *, validation_cutoff, horizon_days=7,
     _require(ends.le(starts).all(), "Training target windows must not overlap.")
 
 
-def make_training_schedule(*, validation_cutoff, n_weeks=4, horizon_days=7,
+def make_training_schedule(*, validation_cutoff, n_weeks=6, horizon_days=7,
                            history_days=180, popularity_days=7):
     """Choose the last n_weeks complete target windows before validation."""
     _require(isinstance(n_weeks, int) and not isinstance(n_weeks, bool) and n_weeks > 0,
