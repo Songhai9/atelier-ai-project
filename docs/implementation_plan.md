@@ -81,4 +81,13 @@ The seven local pipeline stages have been executed for `local_v1`, from source-f
 
 This replay preserves the historical native model identity and V1 results; final confirmation remains reserved. The bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations. Its reader supports known customers, reference-method comparison and an explicit popularity fallback for unknown IDs without raw data or MLflow access.
 
-The next implementation increment is FastAPI around the packaged reader, followed by Streamlit, containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
+FastAPI now wraps the packaged reader with the five planned routes, typed public responses, startup verification and explicit unknown-customer fallback. The next increments are Streamlit, containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
+
+
+## Local API increment
+
+The read-only FastAPI adapter loads the bundle once during application startup and serves known profiles, paginated cohort browsing, the frozen learned method and three reference methods. Unknown IDs return 404 for profiles and an explicit popularity fallback for recommendations. Missing or corrupt serving data returns 503 from readiness and business routes while process liveness remains available.
+
+The adapter uses the bundle independently of raw sources and MLflow. API dependencies are explicit while preserving all previously locked package versions. See [API documentation](api.md) for launch commands, response semantics and verification scope.
+
+The API increment passed ten HTTP tests and the complete 144-test Python suite. A live Uvicorn smoke check also passed against the recorded `local_v1` bundle, including known recommendations, unknown-ID fallback and API documentation.

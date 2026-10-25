@@ -114,9 +114,21 @@ The unified CLI provides `plan`, `status`, `verify`, individual stage commands a
 
 See [local pipeline commands, prerequisites and DVC setup](docs/local_pipeline.md).
 
+## Local recommendation API
+
+FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile` and `/recommendations` over the portable serving bundle. It loads and verifies the bundle once at startup. Unknown IDs have no profile and receive an explicit popularity fallback; historical dates, strategy, score kind and versions accompany the results.
+
+```bash
+uv sync --locked --extra api
+ATELIER_SERVING_BUNDLE=data/processed/pipeline_runs/local_v1/serving/bundle \
+  .venv/bin/python -m uvicorn atelier_ai.api:app --host 127.0.0.1 --port 8000
+```
+
+Open [the local API docs](http://127.0.0.1:8000/docs). See [API setup, HTTP contracts and verification](docs/api.md).
+
 ## Next work
 
-1. Add FastAPI, Streamlit, Docker Compose and synthetic CI around the portable serving bundle.
+1. Add Streamlit, Docker Compose and synthetic CI around the local API and portable serving bundle.
 2. Compare PyTorch under common candidates/periods/metrics and freeze both fitting procedures before opening final confirmation.
 3. Later add GCP and the advisor copilot according to the reference plan.
 

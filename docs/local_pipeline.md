@@ -63,7 +63,7 @@ The first `dvc repro` registers existing valid outputs through the same reusable
 
 DVC 3.67.1 was initialized and executed for `local_v1`. The real `dvc repro` reused each of the seven complete stage outputs, then passed `verify_pipeline` with `artifacts_verified: true` and seven verified stages. The generated lock uses schema 2.0 and records all eight stage commands for `local_v1`. The model identity and reserved-confirmation state are unchanged.
 
-This DVC run validates reuse and integrity of the existing campaign. It is not a new cold rebuild through DVC: the real artifacts were generated earlier through the individual pipeline stages. Synthetic tests also cover a fresh unified run, partial resume, failure handling and complete reuse; the latest full Python suite passed 134 tests.
+This DVC run validates reuse and integrity of the existing campaign. It is not a new cold rebuild through DVC: the real artifacts were generated earlier through the individual pipeline stages. Synthetic tests also cover a fresh unified run, partial resume, failure handling and complete reuse; the full Python suite passed 134 tests at pipeline closure; the API increment extends it to 144 passing tests.
 
 The recorded `local_v1` campaign produced 42 million candidate rows, 2,974 informative groups and 892,200 fitting rows. The saved eight-tree model has SHA-256 `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`, identical to the historical refit.
 

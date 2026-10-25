@@ -127,8 +127,16 @@ dependencies = [
     { name = "seaborn" },
 ]
 
+[package.optional-dependencies]
+api = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "uvicorn" },
+]
+
 [package.dev-dependencies]
 dev = [
+    { name = "httpx" },
     { name = "ipykernel" },
     { name = "jupyterlab" },
     { name = "nbclient" },
@@ -139,18 +147,23 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", specifier = ">=2.0.0" },
+    { name = "fastapi", marker = "extra == 'api'", specifier = "==0.162.0" },
     { name = "kaleido", specifier = ">=1.5.0" },
     { name = "lightgbm", extras = ["scikit-learn"], specifier = "==4.7.0" },
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "mlflow-skinny", specifier = ">=3,<4" },
     { name = "pandas", specifier = ">=3.0.6" },
     { name = "plotly", specifier = ">=7.1.0" },
+    { name = "pydantic", marker = "extra == 'api'", specifier = "==2.14.1" },
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "uvicorn", marker = "extra == 'api'", specifier = "==0.54.0" },
 ]
+provides-extras = ["api"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "ipykernel", specifier = ">=6.29,<8" },
     { name = "jupyterlab", specifier = ">=4.3,<5" },
     { name = "nbclient", specifier = ">=0.10,<1" },
