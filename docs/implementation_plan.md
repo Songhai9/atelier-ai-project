@@ -17,7 +17,7 @@ The sequence is explanatory notebooks → reusable functions → reproducible pi
 | 5. Retrieval and features | Historical candidates and feature dictionary | Notebook 03; `recommendation_features.py` |
 | 6. Simple references | Popularity, preferred types, recent purchases; candidate coverage | Notebook 03; complete-reference validation |
 | 7. LightGBM | Initial ranker, then controlled six-configuration search and MLflow | Completed: notebook 04 prepares groups, notebook 05 records the initial ranker, notebook 06 records all six configurations and the stage-8 candidate |
-| 8. Explain and select | Importance, SHAP, ablations, robustness, final refit and V1 assessment | Initial importance and paired/history diagnostics available; remaining work listed below |
+| 8. Explain and select | Importance, SHAP, ablations, robustness, final refit and V1 assessment | Completed in notebook 07: selected-model diagnostics, frozen eight-tree refit and intermediate V1; see evaluation report and model card |
 
 Notebook numbers identify the learning sequence and are not a second definition of the original plan stages. The five French revision sheets follow this notebook sequence.
 
@@ -47,7 +47,7 @@ Use LambdaRank with customer/week groups and binary observed-purchase labels. Ke
 
 The six declared combinations of leaves {15,31,63} × minimum examples {20,100} are complete. All stop on full-reference validation NDCG@12 with patience 50. Selection by complete-reference MAP@12 retains 63 leaves / minimum 20 and iteration 8 as the stage-8 candidate. MLflow records configuration, identities, metrics, duration, model and figures. See [tuning results](lightgbm_tuning_results.md).
 
-Stage 8 requires native SHAP examples, gain importance, ablations without recency/affinities/popularity, successes and failures, MAP/Recall/NDCG@12, candidate/catalogue coverage, recommended category diversity, activity/history segments and generation/scoring durations. Bootstrap customers for MAP uncertainty. Freeze choices and iteration budget, refit a selected learned model on training plus validation, then assess V1 without tuning on its outcomes. Retain the simpler method on an exact tie; a baseline can serve if it leads.
+Stage 8 covers native SHAP examples, gain importance, ablations without recency/affinities/popularity, successes and failures, MAP/Recall/NDCG@12, candidate/catalogue coverage, recommended category diversity, activity/history segments and generation/scoring durations. Bootstrap customers for MAP uncertainty. Freeze choices and iteration budget, refit a selected learned model on training plus validation, then assess V1 without tuning on its outcomes. Retain the simpler method on an exact tie; a baseline can serve if it leads.
 
 ## Local product and reproducibility - subsequent milestone
 
@@ -64,3 +64,12 @@ Streamlit provides customer, selection, comparison and analysis views. Display t
 **GCP:** reuse containers with Cloud Storage artifacts, Artifact Registry images, Cloud Run API/UI, explicit Cloud Run batch Jobs, Terraform and federated GitHub Actions authentication. Target `europe-west1` after checking availability. MLflow remains local with exported results. Verify project and billing before provisioning; no cloud resource is required for local V1.
 
 **GenAI:** a Gemini Flash advisor assistant calls tools for profiles, recommendations and article metadata. Verify the exact deployment model at that milestone. Prepare 30 cases covering usual requests, unknown clients, missing history/information and tool failures; measure grounded article references and tool success.
+
+
+## Verified stage-8 completion
+
+Notebook 07 covers every scientific stage-8 item: gain importance, native SHAP examples, three declared ablations, successes/failures, complete-reference ranking/coverage/diversity metrics, activity/history segments, local generation/scoring timings and paired customer bootstrap.
+
+The 63/20 configuration with all 31 features was frozen with an eight-iteration refit budget. Seven cutoffs produce 2,974 informative groups / 892,200 fitting rows. Intermediate V1 gives MAP@12=0.022927 versus 0.022168 for the validation-selected recent-purchases baseline; the paired 95% interval of the difference is [-0.002626, 0.004346]. This does not establish clear superiority. V1 does not change the frozen decision.
+
+The next reference-plan section is the reproducible local pipeline and application. Final confirmation stays reserved for a later frozen LightGBM/PyTorch comparison. See [evaluation report](stage8_evaluation_report.md) and [model card](model_card.md).

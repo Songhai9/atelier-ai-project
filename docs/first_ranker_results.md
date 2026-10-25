@@ -34,6 +34,6 @@ Full local evidence is stored under `data/processed/weekly_v1/first_ranker/`: mo
 
 ## Remaining evidence and limitations
 
-Hyperparameter search is complete in notebook 06. SHAP examples, controlled ablations, customer-bootstrap uncertainty, final selection/refit and intermediate V1 performance remain pending. No final-confirmation ranking outcomes have been evaluated. Development exposure makes the V1 period retrospective; see [evaluation strategy](evaluation.md).
+Hyperparameter search is complete in notebook 06. Notebook 07 subsequently completes selected-model SHAP, controlled ablations, uncertainty, frozen selection/refit and intermediate V1 performance. This page retains the initial-model experiment; see the [stage-8 report](stage8_evaluation_report.md) for later evidence. No final-confirmation ranking outcomes have been evaluated. Development exposure makes the V1 period retrospective; see [evaluation strategy](evaluation.md).
 
-The initial ranker has the highest point estimate in this comparison. Customer-bootstrap uncertainty and the declared controlled comparisons remain necessary before a final selection claim. Do not attribute a causal business mechanism to feature importance or infer performance on unseen time periods from this single validation week.
+The initial ranker has the highest point estimate in this initial comparison. Later selection and uncertainty belong to their own recorded experiments; the final V1 difference is inconclusive. Do not attribute a causal business mechanism to feature importance or infer performance on unseen time periods from this single validation week.

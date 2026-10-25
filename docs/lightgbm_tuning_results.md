@@ -39,6 +39,6 @@ Local artifacts under `data/processed/weekly_v1/ranker_search/` include `results
 
 ## Status and limits
 
-Plan stage 7 is complete. Candidate selection is scoped to stage-8 diagnostics, not the final serving decision. SHAP examples, fixed-candidate feature ablations, successes/failures, robustness and customer-bootstrap uncertainty remain pending. Final choices and the refit iteration budget will be frozen after those comparisons.
+Plan stage 7 is complete, and notebook 07 subsequently completed stage 8. This page remains the historical six-configuration selection record. Stage 8 retained the 63/20 configuration and all 31 features, froze an eight-iteration budget, refitted on training plus validation and evaluated intermediate V1. Its small V1 MAP difference has an interval containing zero; see the [stage-8 report](stage8_evaluation_report.md) and [model card](model_card.md).
 
 No V1 or final-confirmation ranking outcomes enter this search. The benchmark remains retrospective because validation and intermediate V1 weeks were accessed during development. Final confirmation remains reserved until the LightGBM/PyTorch comparison is frozen. See [evaluation strategy](evaluation.md).

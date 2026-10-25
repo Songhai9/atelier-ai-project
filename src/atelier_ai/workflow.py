@@ -346,10 +346,28 @@ def fit_ranker_configuration(
     min_child_samples,
     method_name,
     output_subdirectory,
+    feature_columns=None,
 ):
     """Fit one declared configuration using the common validation protocol."""
     import lightgbm as lgb
     import mlflow
+
+    columns = list(
+        FEATURE_COLUMNS
+        if feature_columns is None
+        else feature_columns
+    )
+
+    ordered_subset = [
+        column
+        for column in FEATURE_COLUMNS
+        if column in columns
+    ]
+
+    if not columns or columns != ordered_subset:
+        raise ValueError(
+            "Use a nonempty ordered subset of FEATURE_COLUMNS."
+        )
 
     root = Path(root)
     protocol = load_protocol(root)
@@ -401,7 +419,7 @@ def fit_ranker_configuration(
         .reindex(ordered_ids, fill_value=0)
         .to_numpy()
     )
-    X_validation = validation[FEATURE_COLUMNS].astype("float32")
+    X_validation = validation[columns].astype("float32")
     y_validation = validation["label"].to_numpy()
     validation_keys = validation[["customer_id", "article_id"]].copy()
     del validation
@@ -424,7 +442,7 @@ def fit_ranker_configuration(
     learning = {}
     start = perf_counter()
     model.fit(
-        inputs["X"].astype("float32"),
+        inputs["X"][columns].astype("float32"),
         inputs["y"],
         group=inputs["groups"],
         eval_set=[(X_validation, y_validation)],
@@ -439,10 +457,21 @@ def fit_ranker_configuration(
     )
     fit_seconds = perf_counter() - start
     model.booster_.save_model(str(output / "model.txt"))
+
     reloaded = lgb.Booster(model_file=str(output / "model.txt"))
+
+    if reloaded.feature_name() != columns:
+        raise ValueError(
+            "Reloaded model feature order differs from the selected columns."
+        )
+
     probe = X_validation.iloc[:1000]
+
     if not np.allclose(
-        model.predict(probe), reloaded.predict(probe), rtol=0, atol=1e-12
+        model.predict(probe),
+        reloaded.predict(probe),
+        rtol=0,
+        atol=1e-12,
     ):
         raise ValueError("Reloaded model predictions differ.")
     start = perf_counter()
@@ -475,7 +504,7 @@ def fit_ranker_configuration(
     write_json(output / "learning_curve.json", learning)
     importance = pd.DataFrame(
         {
-            "feature": FEATURE_COLUMNS,
+            "feature": columns,
             "gain": reloaded.feature_importance(importance_type="gain"),
         }
     ).sort_values("gain", ascending=False)
@@ -488,6 +517,7 @@ def fit_ranker_configuration(
     ).strip()
     spec = {
         "method_name": method_name,
+        "feature_columns": columns,
         "parameters": params,
         "early_stopping_rounds": 50,
         "best_iteration": int(model.best_iteration_),
@@ -513,7 +543,7 @@ def fit_ranker_configuration(
         mlflow.log_params(
             {
                 "protocol": protocol["protocol_id"],
-                "feature_count": len(FEATURE_COLUMNS),
+                "feature_count": len(columns),
                 "best_iteration": int(model.best_iteration_),
             }
         )

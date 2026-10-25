@@ -2,7 +2,7 @@
 
 ## Temporal inputs
 
-Read dates from `configs/temporal.yaml`; use six historical cutoffs from 2020-07-22 through 2020-08-26. All targets are seven days; all personal feature histories are 180 days strictly before their own cutoff. Training targets end no later than 2020-09-02.
+Read dates from `configs/temporal.yaml`. Configuration selection uses six historical cutoffs from 2020-07-22 through 2020-08-26, whose targets end no later than 2020-09-02. All targets are seven days; all personal feature histories are 180 days strictly before their own cutoff. The final refit adds cutoff 2020-09-02, whose target window ends at 2020-09-09.
 
 The fixed cohort SHA-256 is `5dcab30d63b42ad6f677fcec8cefade3964300890bba58cac12351060ed02b41`. Cohort selection uses seed 42 and source IDs, never future purchases. Global historical aggregates include source customers outside the cohort.
 
@@ -40,10 +40,22 @@ The six combinations of leaves {15,31,63} × minimum examples {20,100} have been
 
 `preparation.py` creates typed local Parquet sources. Feature exports use customer-complete batches of 500 with explicit SQL types, exact round-trip checks, per-file checksums, source/cohort/configuration/code identities and distinct output fingerprints. Matching complete exports are verified before reuse.
 
-The active run indices live under `data/processed/weekly_v1/`: `validation.json`, `training.json`, `first_ranker/manifest.json`, `ranker_search/manifest.json` and `ranker_search/selected_candidate.json`. Each selected dataset is identified explicitly rather than by an old hardcoded export directory. Raw and derived data and models remain Git-ignored.
+The active run indices live under `data/processed/weekly_v1/`: historical `validation.json`, `training.json`, initial/search manifests, and the stage-8 `final_selection.json`, `final_training/manifest.json`, `final_ranker/manifest.json` and `v1_evaluation/evaluation_manifest.json`. Each selected dataset is identified explicitly rather than by an old hardcoded export directory. Raw and derived data and models remain Git-ignored.
 
 MLflow records the initial experiment and all six search trials locally, including configuration, identities, metrics, duration, models, learning data and the comparison figure. Run IDs are read from the corresponding manifests. The selected search run is `b76ec3a4783c4b7296a07321d032df31`. The manifest records the Git base and hashes of the working-tree source files actually used; a Git base alone is not presented as proof of a clean training tree.
 
-## Next model work
+## Frozen final refit and V1
 
-Stage 7 is complete. Next, use the 63/20 candidate for stage-8 SHAP examples and declared ablations; assess paired/history diagnostics, timings and customer-bootstrap uncertainty. Freeze selection and iteration budgets before a final train-plus-validation refit and V1 evaluation. Final confirmation remains reserved for a frozen LightGBM/PyTorch comparison. See [evaluation strategy](evaluation.md) for prior development exposure and interpretation limits.
+Stage 8 is complete. `final_selection.json` fixes the 63-leaf / minimum-20 configuration, all 31 ordered features and eight boosting iterations before refitting. The final fit uses the six historical cutoffs plus 2020-09-02. Every group's features retain their own cutoff; the last target window ends at 2020-09-09.
+
+All 140,000 groups remain in the audit. The same training-only eligibility rule retains 2,974 complete groups / 892,200 rows / 4,461 positives. The added week contributes 441 groups / 132,300 rows / 674 positives. No V1 or confirmation target enters this fit.
+
+Fit a new estimator for eight iterations without an evaluation set or early stopping. The saved final model has eight trees and 31 features. Scores before/after native reload agree on 1,000 deterministic probe rows, with maximum absolute error 0.0. Local fit-only time is 0.952 s, excluding data preparation and artifact checks.
+
+Final MLflow run: `8f90b653b86543f98358903363295f0e`; final model SHA-256: `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`. The pre-refit selection model and its diagnostics retain their own identity. V1 has been evaluated without changing the final weights; confirmation remains reserved.
+
+Historical candidate manifests remain records of earlier milestones. The frozen decision and final-fit/evaluation manifests describe the later lifecycle; do not rewrite the historical candidate file, whose hash is part of the frozen evidence.
+
+Preserve completed frozen campaigns. Timing and ablation re-execution produces new evidence even when configurations are identical, so full reproduction uses fresh derived-data storage. A fresh top-to-bottom replay was not performed during this closure.
+
+Next, extract the validated workflow into the local reproducible pipeline. See the [evaluation report](stage8_evaluation_report.md) and [evaluation strategy](evaluation.md).

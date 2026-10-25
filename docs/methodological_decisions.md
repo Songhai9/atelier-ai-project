@@ -17,8 +17,15 @@
 | Native model reload check and MLflow provenance | Connects the scored model to the recorded data/configuration/code | Local fit/scoring durations are not serving latency |
 | Final refit only after selection freeze | Uses training plus validation without choosing iterations from test outcomes | Intermediate V1 is retrospective; final model confirmation remains reserved |
 
-## Planned controlled comparisons
+## Completed controlled comparisons and final decision
 
-The declared search of leaves {15,31,63} × minimum examples {20,100} is complete. Complete-reference validation MAP@12 selects 63/20 at iteration 8 as the reference candidate. Among exactly tied learned configurations, the declared sorting prefers fewer maximum leaves and then a higher minimum leaf size; a baseline remains preferred on an exact tie with the leading ranker. Next run ablations without recency, affinities and popularity, keeping candidates, periods, metrics and evaluation populations fixed. Report SHAP examples, successes/failures, timings and customer-bootstrap uncertainty before final selection and refit.
+The declared search of leaves {15,31,63} × minimum examples {20,100} is complete. Complete-reference validation MAP@12 selects 63/20 at iteration 8 as the reference candidate. Among exactly tied learned configurations, the declared sorting prefers fewer maximum leaves and then a higher minimum leaf size; a baseline remains preferred on an exact tie with the leading ranker. Notebook 07 completes ablations without the declared recency, affinity and popularity columns, keeping candidates and evaluation conventions fixed. Each variant reselects its stopping iteration under the common validation rule. The full feature set has the highest MAP of these variants. Native SHAP, errors, descriptive history segments, timings and customer bootstrap are recorded before final selection/refit.
 
 No experiment presupposes LightGBM superiority. A baseline remains eligible for serving. Extra candidate-budget or window sensitivity experiments require a declared scope and do not replace the reference plan's current next increment.
+
+
+The final decision freezes all 31 features and eight refit iterations. The seven-week refit uses no V1 targets or early stopping. V1 has a small positive MAP difference with a paired interval containing zero, while baseline Recall/NDCG remain slightly higher. This result is reported without retuning or replacing the frozen method using V1 outcomes.
+
+Candidate coverage limits end-to-end micro Recall; its numerical rate is not a direct MAP ceiling because MAP uses per-buyer normalization and weighting. Catalogue coverage and category diversity remain separate measures: on V1, LightGBM has lower catalogue coverage but higher mean broad-group diversity than the comparator.
+
+Selected-model validation SHAP/ablations/segments are not explanations or estimates for the final refitted model. Validation and V1 comparisons differ in both week and fitted model; a score change alone does not identify its cause. Final confirmation remains reserved. See [stage-8 report](stage8_evaluation_report.md).
