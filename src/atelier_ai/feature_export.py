@@ -110,7 +110,8 @@ def verify_feature_export(dataset_directory, *, expected_fingerprint=None) -> di
 
 def export_feature_batches(
     customer_ids, candidate_pools, feature_tables, build_batch, *, output_base,
-    feature_columns, nullable_features, sql_schema, provenance, notebook_path,
+    feature_columns, nullable_features, sql_schema, provenance, notebook_path=None,
+    source_path=None,
     candidates_per_customer, batch_customers=500, dataset_split="validation",
 ) -> dict:
     """Export disjoint customer batches, verify contents, then publish the directory.
@@ -127,7 +128,14 @@ def export_feature_batches(
     _check(set(customer_ids) == set(candidate_pools), "Candidate population differs.")
     _check(set(feature_columns).issubset(sql_schema), "Feature schema is incomplete.")
     _check(set(nullable_features).issubset(feature_columns), "Unknown nullable feature.")
-    _check(Path(notebook_path).is_file(), "Save the source notebook before exporting features.")
+    _check((notebook_path is None) != (source_path is None),
+           "Provide exactly one of notebook_path or source_path.")
+    source = Path(notebook_path if notebook_path is not None else source_path)
+    _check(source.is_file(), "Save the source file before exporting features.")
+    snapshot_name = (
+        "pipeline_notebook.ipynb" if notebook_path is not None
+        else "pipeline_source" + source.suffix
+    )
     allowed_types = {"VARCHAR", "TIMESTAMP", "BIGINT", "DOUBLE", "BOOLEAN"}
     _check(set(sql_schema.values()).issubset(allowed_types), "Unsupported SQL storage type.")
     candidate_digest = hashlib.sha256()
@@ -146,6 +154,8 @@ def export_feature_batches(
         "feature_columns": list(feature_columns), "nullable_features": list(nullable_features),
         "schema": schema, "provenance": provenance,
     }
+    if source_path is not None:
+        identity["source_snapshot_sha256"] = file_sha256(source)
     fingerprint = hashlib.sha256(_canonical_json(identity).encode()).hexdigest()
     base = Path(output_base)
     base.mkdir(parents=True, exist_ok=True)
@@ -213,8 +223,8 @@ def export_feature_batches(
                         print(f"Verified feature partitions: {part_number + 1}; customers: {offset + len(batch_ids):,}")
                     del batch, pairs
         pd.DataFrame({"customer_id": customer_ids}).to_csv(staging / "cohort.csv", index=False)
-        shutil.copyfile(notebook_path, staging / "pipeline_notebook.ipynb")
-        for filename in ["cohort.csv", "pipeline_notebook.ipynb"]:
+        shutil.copyfile(source, staging / snapshot_name)
+        for filename in ["cohort.csv", snapshot_name]:
             path = staging / filename
             support_files.append({"file": filename, "size_bytes": path.stat().st_size,
                                   "sha256": file_sha256(path)})
@@ -230,6 +240,8 @@ def export_feature_batches(
             "parts": parts, "support_files": support_files, "missing_counts": missing_counts,
             "key_uniqueness": "Distinct article lists per unique customer; disjoint customer partitions; exact row round trips.",
         }
+        if source_path is not None:
+            manifest["source_snapshot_sha256"] = identity["source_snapshot_sha256"]
         (staging / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         checks = verify_feature_export(staging, expected_fingerprint=fingerprint)
         staging.rename(destination)

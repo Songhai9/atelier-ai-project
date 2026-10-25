@@ -1,0 +1,2 @@
+# Local immutable campaign. Use a new ID when computation inputs change.
+run_id: local_v1

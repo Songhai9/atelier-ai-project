@@ -1,0 +1,5 @@
+# Python imports and OS metadata must not invalidate directory dependencies.
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.DS_Store

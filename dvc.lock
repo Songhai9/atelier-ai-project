@@ -1,0 +1,504 @@
+schema: '2.0'
+stages:
+  validate_sources:
+    cmd: .venv/bin/python -m atelier_ai.pipeline validate-sources --run-id 
+      local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: data/raw/hm/articles.csv
+      hash: md5
+      md5: f193ef0f582e8476ebb613d143742d0f
+      size: 36127865
+    - path: data/raw/hm/customers.csv
+      hash: md5
+      md5: 3aa1713831590115fffc667ba6c187a7
+      size: 207135859
+    - path: data/raw/hm/transactions_train.csv
+      hash: md5
+      md5: 1c2324373fd36542f4e6a99eedd1a240
+      size: 3488002253
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/source_validation
+      hash: md5
+      md5: 36649f7e6587a9f2d634bcb283121a65.dir
+      size: 744
+      nfiles: 1
+  prepare_sources:
+    cmd: .venv/bin/python -m atelier_ai.pipeline prepare-sources --run-id 
+      local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/source_validation
+      hash: md5
+      md5: 36649f7e6587a9f2d634bcb283121a65.dir
+      size: 744
+      nfiles: 1
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: data/raw/hm/articles.csv
+      hash: md5
+      md5: f193ef0f582e8476ebb613d143742d0f
+      size: 36127865
+    - path: data/raw/hm/customers.csv
+      hash: md5
+      md5: 3aa1713831590115fffc667ba6c187a7
+      size: 207135859
+    - path: data/raw/hm/transactions_train.csv
+      hash: md5
+      md5: 1c2324373fd36542f4e6a99eedd1a240
+      size: 3488002253
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+  build_training:
+    cmd: .venv/bin/python -m atelier_ai.pipeline build-training --run-id 
+      local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/source_snapshots
+      hash: md5
+      md5: b0c32137b4a49978ceeae496e9942534.dir
+      size: 113794
+      nfiles: 13
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+  fit_model:
+    cmd: .venv/bin/python -m atelier_ai.pipeline fit-model --run-id local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/model
+      hash: md5
+      md5: 633c68e2e577e9cefc9bfb0756f33988.dir
+      size: 290780
+      nfiles: 20
+  predict_v1:
+    cmd: .venv/bin/python -m atelier_ai.pipeline predict-v1 --run-id local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/model
+      hash: md5
+      md5: 633c68e2e577e9cefc9bfb0756f33988.dir
+      size: 290780
+      nfiles: 20
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/predictions
+      hash: md5
+      md5: 0cd3ea0c54c6f795df23508796d43193.dir
+      size: 39355895
+      nfiles: 61
+  evaluate_v1:
+    cmd: .venv/bin/python -m atelier_ai.pipeline evaluate-v1 --run-id local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/model
+      hash: md5
+      md5: 633c68e2e577e9cefc9bfb0756f33988.dir
+      size: 290780
+      nfiles: 20
+    - path: data/processed/pipeline_runs/local_v1/predictions
+      hash: md5
+      md5: 0cd3ea0c54c6f795df23508796d43193.dir
+      size: 39355895
+      nfiles: 61
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+    - path: 
+        data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+      hash: md5
+      md5: 387fb46624d63c9ca626b5201e0330eb
+      size: 796
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/evaluation
+      hash: md5
+      md5: cb056fcdee5c76bdef4c23a95ffb25c7.dir
+      size: 1217095
+      nfiles: 23
+  package_service:
+    cmd: .venv/bin/python -m atelier_ai.pipeline package-service --run-id 
+      local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/evaluation
+      hash: md5
+      md5: cb056fcdee5c76bdef4c23a95ffb25c7.dir
+      size: 1217095
+      nfiles: 23
+    - path: data/processed/pipeline_runs/local_v1/model
+      hash: md5
+      md5: 633c68e2e577e9cefc9bfb0756f33988.dir
+      size: 290780
+      nfiles: 20
+    - path: data/processed/pipeline_runs/local_v1/predictions
+      hash: md5
+      md5: 0cd3ea0c54c6f795df23508796d43193.dir
+      size: 39355895
+      nfiles: 61
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+    - path: 
+        data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+      hash: md5
+      md5: 387fb46624d63c9ca626b5201e0330eb
+      size: 796
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1
+    outs:
+    - path: data/processed/pipeline_runs/local_v1/serving
+      hash: md5
+      md5: 5b5193a7924136c0e8315da1898c3ce0.dir
+      size: 29473290
+      nfiles: 40
+  verify_pipeline:
+    cmd: .venv/bin/python -m atelier_ai.pipeline verify --run-id local_v1
+    deps:
+    - path: configs/pipeline.yaml
+      hash: md5
+      md5: fb0f930324a3d45997cc1e505dd6cd79
+      size: 90
+    - path: configs/temporal.yaml
+      hash: md5
+      md5: 84a5854a5c208ab43353a0fbdc219ac0
+      size: 217
+    - path: data/processed/pipeline_runs/local_v1/evaluation
+      hash: md5
+      md5: cb056fcdee5c76bdef4c23a95ffb25c7.dir
+      size: 1217095
+      nfiles: 23
+    - path: data/processed/pipeline_runs/local_v1/model
+      hash: md5
+      md5: 633c68e2e577e9cefc9bfb0756f33988.dir
+      size: 290780
+      nfiles: 20
+    - path: data/processed/pipeline_runs/local_v1/predictions
+      hash: md5
+      md5: 0cd3ea0c54c6f795df23508796d43193.dir
+      size: 39355895
+      nfiles: 61
+    - path: data/processed/pipeline_runs/local_v1/prepared
+      hash: md5
+      md5: 42416b9a9cf677d1e497a824422fd593.dir
+      size: 552610390
+      nfiles: 4
+    - path: data/processed/pipeline_runs/local_v1/serving
+      hash: md5
+      md5: 5b5193a7924136c0e8315da1898c3ce0.dir
+      size: 29473290
+      nfiles: 40
+    - path: data/processed/pipeline_runs/local_v1/source_snapshots
+      hash: md5
+      md5: b0c32137b4a49978ceeae496e9942534.dir
+      size: 113794
+      nfiles: 13
+    - path: data/processed/pipeline_runs/local_v1/source_validation
+      hash: md5
+      md5: 36649f7e6587a9f2d634bcb283121a65.dir
+      size: 744
+      nfiles: 1
+    - path: data/processed/pipeline_runs/local_v1/training
+      hash: md5
+      md5: b1020355c3a362bab49ff7f113c044a1.dir
+      size: 137486088
+      nfiles: 310
+    - path: 
+        data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+      hash: md5
+      md5: 387fb46624d63c9ca626b5201e0330eb
+      size: 796
+    - path: data/processed/weekly_v1/final_selection.json
+      hash: md5
+      md5: e3a89466c0eb31e7e75a64d185632045
+      size: 7332
+    - path: data/raw/hm/articles.csv
+      hash: md5
+      md5: f193ef0f582e8476ebb613d143742d0f
+      size: 36127865
+    - path: data/raw/hm/customers.csv
+      hash: md5
+      md5: 3aa1713831590115fffc667ba6c187a7
+      size: 207135859
+    - path: data/raw/hm/transactions_train.csv
+      hash: md5
+      md5: 1c2324373fd36542f4e6a99eedd1a240
+      size: 3488002253
+    - path: docs/data_manifest.json
+      hash: md5
+      md5: 75742d43a136d5551b283343faf623a7
+      size: 859
+    - path: pyproject.toml
+      hash: md5
+      md5: 496119e1370b3a3df68a3bc3890c3d63
+      size: 700
+    - path: src/atelier_ai
+      hash: md5
+      md5: 126e5e2482fdf425126bcc472bc510ca.dir
+      size: 234754
+      nfiles: 28
+    - path: uv.lock
+      hash: md5
+      md5: 221b160b9f8a72f64e12d235e4674fe9
+      size: 217999
+    params:
+      configs/pipeline.yaml:
+        run_id: local_v1

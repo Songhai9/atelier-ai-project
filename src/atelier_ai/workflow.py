@@ -52,18 +52,18 @@ def cohort(root):
     return pd.Index(selected["customer_id"], dtype="string")
 
 
-def build_context(root, ids, cutoff):
-    with open_prepared(root) as con:
+def build_context(root, ids, cutoff, *, prepared_directory=None):
+    with open_prepared(root, prepared_directory=prepared_directory) as con:
         metadata = con.execute(
             "SELECT article_id,product_group_name,product_type_name,colour_group_name FROM articles"
         ).df()
         return build_historical_context(con, ids, metadata, cutoff=cutoff)
 
 
-def target_reference(root, ids, cutoff):
+def target_reference(root, ids, cutoff, *, prepared_directory=None):
     """Return all source rows and all distinct cohort targets for one target week."""
     cutoff = pd.Timestamp(cutoff)
-    with open_prepared(root) as con:
+    with open_prepared(root, prepared_directory=prepared_directory) as con:
         con.register("_target_customers", pd.DataFrame({"customer_id": ids}))
         rows = con.execute(
             "SELECT t.* FROM transactions t INNER JOIN _target_customers c "
@@ -83,12 +83,20 @@ def reference_dict(targets):
     return targets.groupby("customer_id")["article_id"].agg(set).to_dict()
 
 
-def provenance(root, ids):
+def provenance(root, ids, *, snapshots_directory=None, source_names=None):
     root = Path(root)
-    snapshots = root / "data/processed/weekly_v1/source_snapshots"
+    snapshots = (
+        root / "data/processed/weekly_v1/source_snapshots"
+        if snapshots_directory is None else Path(snapshots_directory)
+    )
     snapshots.mkdir(parents=True, exist_ok=True)
     source_hashes = {}
-    for source in sorted((root / "src/atelier_ai").glob("*.py")):
+    sources = (
+        sorted((root / "src/atelier_ai").glob("*.py"))
+        if source_names is None
+        else [root / "src/atelier_ai" / name for name in source_names]
+    )
+    for source in sources:
         contents = source.read_bytes()
         digest = sha256(contents).hexdigest()
         snapshot = snapshots / (digest + ".py")

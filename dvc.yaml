@@ -1,0 +1,176 @@
+# Stage metadata and hashes only: large outputs stay local and are preserved on repro.
+vars:
+- configs/pipeline.yaml
+stages:
+  validate_sources:
+    cmd: .venv/bin/python -m atelier_ai.pipeline validate-sources --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/raw/hm/articles.csv
+    - data/raw/hm/customers.csv
+    - data/raw/hm/transactions_train.csv
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/source_validation:
+        cache: false
+        persist: true
+  prepare_sources:
+    cmd: .venv/bin/python -m atelier_ai.pipeline prepare-sources --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/raw/hm/articles.csv
+    - data/raw/hm/customers.csv
+    - data/raw/hm/transactions_train.csv
+    - data/processed/pipeline_runs/${run_id}/source_validation
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/prepared:
+        cache: false
+        persist: true
+  build_training:
+    cmd: .venv/bin/python -m atelier_ai.pipeline build-training --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/processed/pipeline_runs/${run_id}/prepared
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/training:
+        cache: false
+        persist: true
+    - data/processed/pipeline_runs/${run_id}/source_snapshots:
+        cache: false
+        persist: true
+  fit_model:
+    cmd: .venv/bin/python -m atelier_ai.pipeline fit-model --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/processed/pipeline_runs/${run_id}/training
+    - data/processed/pipeline_runs/${run_id}/prepared
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/model:
+        cache: false
+        persist: true
+  predict_v1:
+    cmd: .venv/bin/python -m atelier_ai.pipeline predict-v1 --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/processed/pipeline_runs/${run_id}/prepared
+    - data/processed/pipeline_runs/${run_id}/training
+    - data/processed/pipeline_runs/${run_id}/model
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/predictions:
+        cache: false
+        persist: true
+  evaluate_v1:
+    cmd: .venv/bin/python -m atelier_ai.pipeline evaluate-v1 --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/processed/pipeline_runs/${run_id}/prepared
+    - data/processed/pipeline_runs/${run_id}/training
+    - data/processed/pipeline_runs/${run_id}/model
+    - data/processed/pipeline_runs/${run_id}/predictions
+    - data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/evaluation:
+        cache: false
+        persist: true
+  package_service:
+    cmd: .venv/bin/python -m atelier_ai.pipeline package-service --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/processed/pipeline_runs/${run_id}/prepared
+    - data/processed/pipeline_runs/${run_id}/training
+    - data/processed/pipeline_runs/${run_id}/model
+    - data/processed/pipeline_runs/${run_id}/predictions
+    - data/processed/pipeline_runs/${run_id}/evaluation
+    - data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    outs:
+    - data/processed/pipeline_runs/${run_id}/serving:
+        cache: false
+        persist: true
+  verify_pipeline:
+    cmd: .venv/bin/python -m atelier_ai.pipeline verify --run-id ${run_id}
+    deps:
+    - src/atelier_ai
+    - pyproject.toml
+    - uv.lock
+    - docs/data_manifest.json
+    - configs/temporal.yaml
+    - configs/pipeline.yaml
+    - data/processed/weekly_v1/final_selection.json
+    - data/raw/hm/articles.csv
+    - data/raw/hm/customers.csv
+    - data/raw/hm/transactions_train.csv
+    - data/processed/weekly_v1/diagnostics/lightgbm_leaves_63_min_20/segmentation_manifest.json
+    - data/processed/pipeline_runs/${run_id}/source_validation
+    - data/processed/pipeline_runs/${run_id}/prepared
+    - data/processed/pipeline_runs/${run_id}/training
+    - data/processed/pipeline_runs/${run_id}/source_snapshots
+    - data/processed/pipeline_runs/${run_id}/model
+    - data/processed/pipeline_runs/${run_id}/predictions
+    - data/processed/pipeline_runs/${run_id}/evaluation
+    - data/processed/pipeline_runs/${run_id}/serving
+    params:
+    - configs/pipeline.yaml:
+      - run_id
+    always_changed: true

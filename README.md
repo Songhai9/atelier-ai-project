@@ -101,12 +101,24 @@ uv run python scripts/check_temporal_protocol.py
 
 Tests use synthetic data and do not need competition files. For the local MLflow file store, run `MLFLOW_ALLOW_FILE_STORE=true uv run mlflow ui --backend-store-uri ./mlruns` and open the printed local address. The tracking store is local, explicitly opted into file storage, and excluded from Git.
 
+## Frozen local pipeline
+
+The seven local stages have been executed for `local_v1`: source validation, preparation, training-data assembly, frozen refit, V1 prediction, evaluation and a portable serving bundle. The native model and recommendation lists match the historical campaign. Final confirmation remains reserved.
+
+The unified CLI provides `plan`, `status`, `verify`, individual stage commands and resumable `run`. `status` reads completion records; `verify` checks artifact identities and lineage. DVC declarations record dependencies with persistent local outputs. DVC 3.67.1 has executed the graph against the completed `local_v1` campaign: all seven stage outputs were verified and reused, the final integrity check passed, and `dvc.lock` records all eight stages.
+
+```bash
+.venv/bin/python -m atelier_ai.pipeline status --run-id local_v1
+.venv/bin/python -m atelier_ai.pipeline verify --run-id local_v1
+```
+
+See [local pipeline commands, prerequisites and DVC setup](docs/local_pipeline.md).
+
 ## Next work
 
-1. Extract the validated workflow into a reproducible local pipeline and version its dependencies with DVC.
-2. Package the frozen system for FastAPI, Streamlit, Docker Compose and synthetic CI.
-3. Compare PyTorch under common candidates/periods/metrics and freeze both fitting procedures before opening final confirmation.
-4. Later add GCP and the advisor copilot according to the reference plan.
+1. Add FastAPI, Streamlit, Docker Compose and synthetic CI around the portable serving bundle.
+2. Compare PyTorch under common candidates/periods/metrics and freeze both fitting procedures before opening final confirmation.
+3. Later add GCP and the advisor copilot according to the reference plan.
 
 ## Documentation and limits
 

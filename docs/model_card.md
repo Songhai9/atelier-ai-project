@@ -4,7 +4,7 @@
 
 A retrospective fashion recommendation prototype for a client advisor: rank twelve distinct articles per anonymised customer from 300 historical candidates. The frozen LightGBM configuration was selected on validation MAP@12. Its final V1 MAP point estimate is slightly higher than the selected baseline, but the paired interval includes zero; clear superiority is not established.
 
-This artifact is not a calibrated purchase-probability model, current-stock system or measured business-impact intervention. Local API/UI packaging remains the next milestone.
+This artifact is not a calibrated purchase-probability model, current-stock system or measured business-impact intervention. The historical serving bundle is packaged; local API/UI integration remains the next milestone.
 
 ## Model and inputs
 

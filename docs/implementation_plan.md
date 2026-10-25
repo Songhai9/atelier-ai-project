@@ -73,3 +73,12 @@ Notebook 07 covers every scientific stage-8 item: gain importance, native SHAP e
 The 63/20 configuration with all 31 features was frozen with an eight-iteration refit budget. Seven cutoffs produce 2,974 informative groups / 892,200 fitting rows. Intermediate V1 gives MAP@12=0.022927 versus 0.022168 for the validation-selected recent-purchases baseline; the paired 95% interval of the difference is [-0.002626, 0.004346]. This does not establish clear superiority. V1 does not change the frozen decision.
 
 The next reference-plan section is the reproducible local pipeline and application. Final confirmation stays reserved for a later frozen LightGBM/PyTorch comparison. See [evaluation report](stage8_evaluation_report.md) and [model card](model_card.md).
+
+
+## Verified local pipeline completion
+
+The seven local pipeline stages have been executed for `local_v1`, from source-file validation through the portable serving bundle. The unified CLI supports status, full verification, individual stages and resumable execution. DVC 3.67.1 executed its graph using all seven verified stage outputs, wrote the eight-stage `dvc.lock`, and completed the final integrity check. The Python suite passed 134 synthetic tests.
+
+This replay preserves the historical native model identity and V1 results; final confirmation remains reserved. The bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations. Its reader supports known customers, reference-method comparison and an explicit popularity fallback for unknown IDs without raw data or MLflow access.
+
+The next implementation increment is FastAPI around the packaged reader, followed by Streamlit, containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
