@@ -72,3 +72,7 @@ V1 evaluates 1,015 buyers against 3,073 complete target pairs. MAP@12 is 0.02292
 The portable serving bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations at reference date 2020-09-09. Its reader works without raw data or MLflow. Unknown IDs have no profile and receive an explicit popularity fallback. Customer snapshot attributes are excluded; stock availability, price units and calibrated purchase probabilities are not established.
 
 The application milestone now includes [FastAPI](api.md) and the [Streamlit advisor interface](ui.md). Containers and synthetic CI remain to implement. Full-source training stays an explicit local action.
+
+## Later offline confirmation scope
+
+This page documents the packaged 2020-09-09 LightGBM V1 snapshot and its completed local integration. Its stored captions/protocol fields predate the later frozen comparison. Final confirmation [2020-09-16, 2020-09-23) is now evaluated separately in notebook 09; neither PyTorch nor its final-week predictions are integrated into this serving bundle or DVC graph. See [the current neural/confirmation report](pytorch_results.md).

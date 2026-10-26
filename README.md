@@ -10,7 +10,7 @@ The project follows **data foundation → temporal protocol → behavioral EDA �
 
 ## Current milestone
 
-Scientific plan stages 1-8 are complete in notebooks 01-07. Diagnostics, frozen selection, the final train-plus-validation refit and intermediate V1 evaluation are recorded. LightGBM leads validation MAP; its small positive V1 MAP difference has an interval containing zero.
+Scientific plan stages 1-8, the local DVC pipeline, FastAPI and Streamlit interface are complete. Notebooks 08-09 add a local PyTorch ranker and frozen final confirmation. LightGBM leads validation MAP; neither learned system exceeds the recent-purchases baseline on final-confirmation MAP. The PyTorch-minus-LightGBM interval includes zero.
 
 - Source diagnostics cover 105,542 articles, 1,371,980 customer records and 31,788,324 purchase rows. Raw files remain unchanged; typed Parquet supports repeatable analysis.
 - The shared calendar defines six historical training weeks, validation, intermediate V1 evaluation and final model confirmation.
@@ -45,7 +45,23 @@ The frozen 63/20 configuration was refitted on seven training cutoffs using eigh
 | recent_purchases_180d | 0.022168 | 0.044635 | 0.032089 |
 | lightgbm_leaves_63_min_20 | 0.022927 | 0.041459 | 0.031957 |
 
-The MAP difference against the validation-selected recent-purchases baseline is **0.000759**, with a paired percentile 95% interval **[-0.002626, 0.004346]** from 5,000 buyer resamples. This does not establish a clear V1 advantage. The baseline has slightly higher Recall and NDCG. Preserve the frozen configuration and report the result without test-driven retuning. V1 is retrospective; final confirmation remains reserved. See the [stage-8 evaluation report](docs/stage8_evaluation_report.md) and [model card](docs/model_card.md).
+The MAP difference against the validation-selected recent-purchases baseline is **0.000759**, with a paired percentile 95% interval **[-0.002626, 0.004346]** from 5,000 buyer resamples. This does not establish a clear V1 advantage. The baseline has slightly higher Recall and NDCG. Preserve the frozen configuration and report the result without test-driven retuning. V1 is retrospective; the later frozen final confirmation is reported below. See the [stage-8 evaluation report](docs/stage8_evaluation_report.md) and [model card](docs/model_card.md).
+
+## Frozen final confirmation
+
+The local PyTorch extension and the frozen five-system confirmation are complete. The window is **[2020-09-16, 2020-09-23)**. All 20,000 recipients receive twelve distinct articles from the same 300-candidate policy. Target-based means cover all 1,027 buyers and 3,267 distinct customer–article targets from 3,736 cohort purchase rows; 18,973 nonbuyers (94.865%) are excluded from these means, but receive lists. Retrieval misses remain in the reference sets.
+
+| Method | MAP@12 | Macro Recall@12 | NDCG@12 | Retrieved targets / 3,267 |
+|---|---:|---:|---:|---:|
+| recent_popularity_7d | 0.006555 | 0.019679 | 0.012617 | 64 |
+| preferred_product_types | 0.005354 | 0.015364 | 0.010033 | 45 |
+| recent_purchases_180d | **0.020584** | 0.044484 | 0.030262 | 101 |
+| lightgbm_leaves_63_min_20 | 0.017709 | 0.037696 | 0.026555 | 93 |
+| pytorch_hybrid | 0.020575 | **0.046191** | **0.031193** | 108 |
+
+The declared paired contrast, PyTorch hybrid minus LightGBM MAP@12, is **0.002866**, with percentile 95% interval **[-0.002320, 0.008160]** from 5,000 buyer resamples (seed 42). It does not establish superiority or equivalence. The recent-purchases baseline has the highest MAP point estimate; no baseline-versus-PyTorch paired contrast is reported. Final outcomes do not trigger retuning or change the recorded validation-selected nomination.
+
+PyTorch scores the 2,406 recipients present in its final training vocabulary; the other 17,594 use the fixed recent-purchases fallback. The table therefore measures the complete hybrid system. The API/UI still serve the packaged **2020-09-09 LightGBM V1 snapshot**. See [PyTorch methods, artifacts and confirmation report](docs/pytorch_results.md).
 
 ## Temporal contract
 
@@ -56,7 +72,7 @@ The MAP difference against the validation-selected recent-purchases baseline is 
 | Intermediate V1 evaluation | 2020-09-09 | 2020-09-16 | 255,241 |
 | Final LightGBM/PyTorch confirmation | 2020-09-16 | 2020-09-23 | 240,311 |
 
-Intervals include their start and exclude their end. Table counts cover all source customers and retain repeated rows. Six historical cutoffs run weekly from 22 July through 26 August 2020. Candidates/features use only observations strictly before their own cutoff, with a 180-day personal lookback. The [evaluation strategy](docs/evaluation.md) defines fitting, selection, final refit and development-exposure limits. Intermediate V1 has been evaluated; final-confirmation ranking performance remains uncomputed.
+Intervals include their start and exclude their end. Table counts cover all source customers and retain repeated rows. Six historical cutoffs run weekly from 22 July through 26 August 2020. Candidates/features use only observations strictly before their own cutoff, with a 180-day personal lookback. The [evaluation strategy](docs/evaluation.md) defines fitting, selection, final refit and development-exposure limits. Intermediate V1 and frozen final confirmation have been evaluated; final outcomes are now exposed and must not be reused for tuning.
 
 ## Repository guide
 
@@ -69,6 +85,8 @@ Intervals include their start and exclude their end. Table counts cover all sour
 | [05 Initial LightGBM](notebooks/05_lightgbm_ranker.ipynb) | Planned initial fit, learning curve, full-reference comparison and diagnostics |
 | [06 LightGBM tuning](notebooks/06_lightgbm_tuning.ipynb) | Six declared configurations, common-input checks, MAP heatmap and candidate selection |
 | [07 Model diagnostics and V1](notebooks/07_model_diagnostics.ipynb) | Selected-model diagnostics, frozen decision, final refit, V1 recommendations and uncertainty |
+| [08 PyTorch ranker](notebooks/08_pytorch_ranker.ipynb) | Groupwise pairwise learning, validation selection, fixed-budget final refit and freeze |
+| [09 Frozen confirmation](notebooks/09_final_confirmation.ipynb) | Independent artifact loading, complete-reference confirmation, paired uncertainty and MLflow |
 
 Reusable computations live under `src/atelier_ai/`; synthetic tests under `tests/`; configuration under `configs/`. Raw data, prepared tables, generated figures, models and MLflow storage stay outside Git. Executed notebooks contain portable static figures alongside interactive Plotly outputs.
 
@@ -78,7 +96,7 @@ Use Python 3.12, Git and uv. Clone this repository and run `uv sync --locked`. O
 
 Obtain the competition files under their access conditions and place `articles.csv`, `customers.csv` and `transactions_train.csv` in `data/raw/hm/`. The [acquisition manifest](docs/data_manifest.json) identifies the documented source version.
 
-Run notebooks in numerical order with the project environment. The first notebook's complete-file diagnostics scan large sources; the following notebooks prepare and reuse typed Parquet. Feature exports are batched and verified. For a fresh derived-data campaign, run the whole learning sequence explicitly with:
+Notebooks 01-08 record the learning/training sequence. Notebook 09 starts in a fresh kernel without running cells from notebook 08; its default verifies and loads saved predictions and completed evaluation artifacts. Generated data and model artifacts are required and are intentionally not committed. Do not use Run All in notebook 08 merely to review final results. Run training notebooks deliberately with the project environment. The first notebook's complete-file diagnostics scan large sources; the following notebooks prepare and reuse typed Parquet. Feature exports are batched and verified. For a fresh derived-data campaign, run the whole learning sequence explicitly with:
 
 ```bash
 uv run python scripts/run_notebooks.py
@@ -103,7 +121,7 @@ Tests use synthetic data and do not need competition files. For the local MLflow
 
 ## Frozen local pipeline
 
-The seven local stages have been executed for `local_v1`: source validation, preparation, training-data assembly, frozen refit, V1 prediction, evaluation and a portable serving bundle. The native model and recommendation lists match the historical campaign. Final confirmation remains reserved.
+The seven local stages have been executed for `local_v1`: source validation, preparation, training-data assembly, frozen refit, V1 prediction, evaluation and a portable serving bundle. The native model and recommendation lists match the historical V1 campaign. The later PyTorch comparison is a separate offline campaign, outside this DVC graph and serving bundle.
 
 The unified CLI provides `plan`, `status`, `verify`, individual stage commands and resumable `run`. `status` reads completion records; `verify` checks artifact identities and lineage. DVC declarations record dependencies with persistent local outputs. DVC 3.67.1 has executed the graph against the completed `local_v1` campaign: all seven stage outputs were verified and reused, the final integrity check passed, and `dvc.lock` records all eight stages.
 
@@ -142,9 +160,9 @@ Open [the advisor interface](http://127.0.0.1:8501). See [UI setup, workflow and
 
 ## Next work
 
-1. Add Docker Compose and synthetic CI around the local API, Streamlit interface and portable serving bundle.
-2. Compare PyTorch under common candidates/periods/metrics and freeze both fitting procedures before opening final confirmation.
-3. Later add GCP and the advisor copilot according to the reference plan.
+1. Review and commit the completed local PyTorch/confirmation evidence and documentation.
+2. Containers and synthetic CI remain deferred at the user's request, followed by GCP and the advisor copilot.
+3. A common inference-latency benchmark and any PyTorch serving/DVC integration require a separate increment; this closure makes no comparative latency or production claim.
 
 ## Documentation and limits
 
@@ -157,6 +175,7 @@ Open [the advisor interface](http://127.0.0.1:8501). See [UI setup, workflow and
 - [Controlled LightGBM tuning](docs/lightgbm_tuning_results.md)
 - [Stage-8 evaluation report](docs/stage8_evaluation_report.md)
 - [Model card](docs/model_card.md)
+- [Local PyTorch and frozen final confirmation](docs/pytorch_results.md)
 - [Methodological decisions](docs/methodological_decisions.md)
 - [Behavioral EDA summary](docs/eda_summary.md)
 - [Data card](docs/data_card.md)

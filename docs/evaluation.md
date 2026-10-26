@@ -40,17 +40,17 @@ Compare recent global popularity, popularity in three preferred product types, r
 
 The initial learned model uses the planned starting configuration and validation NDCG stopping with patience 50. Its stopping metric uses full target counts for ideal gain and excludes nonbuyers; it does not treat buyers with completely missed retrieval as perfect empty groups. The six-configuration comparison is complete: validation MAP@12 selects 63 leaves / minimum 20 with iteration 8 as the stage-8 candidate. These selected-model diagnostics and final method selection are completed in notebook 07; their scope is documented in the stage-8 report. See [tuning results](lightgbm_tuning_results.md).
 
-## Selection, fitting and reserved outcomes
+## Selection, fitting and frozen outcomes
 
 Select by validation MAP@12. Retain the simpler method on an exact tie. Freeze model choices and iteration budget, then refit a selected learned configuration on historical training plus validation. Neither the V1 nor confirmation targets enter this fitting or early stopping.
 
-After freezing V1 choices, report intermediate V1 outcomes without revising that reported configuration. Freeze the LightGBM/PyTorch comparison and both fitting procedures before evaluating final confirmation. Notebook 07 now records intermediate V1 performance for the frozen final refit. Final-confirmation recommendation performance remains uncomputed.
+After freezing V1 choices, report intermediate V1 outcomes without revising that reported configuration. Freeze the LightGBM/PyTorch comparison and both fitting procedures before evaluating final confirmation. Notebook 07 now records intermediate V1 performance for the frozen final refit. Notebook 09 now records the frozen final confirmation; its results and uncertainty are documented below.
 
 Predictions issued at a week's start do not incorporate purchases from inside that week. Earlier validation purchases may become historical inputs at later cutoffs without being future inputs.
 
 ## Interpretation limits
 
-This is a retrospective local benchmark. The weeks beginning 2020-09-02 and 2020-09-09 were accessed during development. The intermediate V1 period is therefore not an untouched independent test. Recomputing under fixed chronological boundaries does not erase that exposure. Final-week ranking performance remains reserved for the frozen LightGBM/PyTorch comparison.
+This is a retrospective local benchmark. The weeks beginning 2020-09-02 and 2020-09-09 were accessed during development. The intermediate V1 period is therefore not an untouched independent test. Recomputing under fixed chronological boundaries does not erase that exposure. Final-week ranking performance has now been exposed by the frozen LightGBM/PyTorch comparison; this week is no longer available as untouched data for further tuning.
 
 Snapshot article classifications are used under an explicit stability assumption; their observation dates and stock availability are not established. Customer snapshot attributes with unresolved historical availability are excluded from model inputs. Price units and channel business labels remain unresolved. Report cold-history cases rather than silently deleting them.
 
@@ -75,3 +75,13 @@ Candidate coverage is 618/3,073=20.1106%. LightGBM retrieves 105 target pairs (m
 Bootstrap 5,000 target buyers samples with replacement, seed 42, keeping all methods' AP values paired. Each resample contains 1,015 buyers, including zero APs. The percentile 95% interval of LightGBM minus the fixed comparator is [-0.002626, 0.004346], around 0.000759. It includes zero: this is neither a demonstrated advantage nor an equivalence result.
 
 Intervals condition on fitted systems and the observed week; they do not capture training, selection or between-week variation. The comparator was chosen on validation, not on V1. No configuration was changed after V1 outcomes. See [full report](stage8_evaluation_report.md).
+
+## Executed final confirmation
+
+Notebook 09 evaluates five frozen systems on [2020-09-16, 2020-09-23), after model weights, preprocessing, vocabularies, fallback policy and prediction lists were fixed. All target windows used for fitting end by 2020-09-09. Purchases between 2020-09-09 and 2020-09-16 may enter historical prediction inputs; they do not enter this refit.
+
+For 20,000 recipients, 3,736 cohort source purchase rows become 3,267 distinct customer–article targets / 1,027 target buyers. Excluded nonbuyers: 18,973 (94.865%). All buyers, including complete retrieval misses and zero-AP cases, remain in MAP/Recall/NDCG means. Candidate coverage is 22.5895% of all 3,267 targets.
+
+The primary contrast is **PyTorch hybrid minus LightGBM**, not PyTorch minus the best method observed on confirmation. Resampling uses the same 1,027 buyers for every method, 5,000 times with replacement, seed 42. The stored generic `model_minus_baseline` bootstrap row denotes this declared PyTorch/LightGBM contrast. The delta is 0.002865909; percentile 95% interval [-0.002320312, 0.008159653]. It is inconclusive for superiority and does not establish equivalence. Uncertainty conditions on fixed systems and this one week, excluding training, selection and temporal variation.
+
+Recent purchases has the highest MAP point estimate (0.020584); PyTorch hybrid follows (0.020575), then LightGBM (0.017709). PyTorch has the highest descriptive macro Recall/NDCG; these secondary differences have no paired inference in this report. Preserve the validation nomination and frozen fitting procedures. Do not retune, rename a test-selected winner or claim business benefit from these outcomes. See [complete results](pytorch_results.md).

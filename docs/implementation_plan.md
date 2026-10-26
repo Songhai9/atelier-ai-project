@@ -12,14 +12,14 @@ The sequence is explanatory notebooks → reusable functions → reproducible pi
 |---|---|---|
 | 1. Problem framing | Brief, dictionary, advisor workflow | `docs/project_brief.md`, `docs/data_dictionary.md` |
 | 2. Data foundation | Immutable raw sources, checksums, diagnostics, typed Parquet and fixed cohort | Notebook 01; `preparation.py`; acquisition manifest |
-| 3. Temporal protocol | Six training targets, validation, V1 evaluation, reserved final confirmation | `configs/temporal.yaml`; notebook 01; boundary tests |
+| 3. Temporal protocol | Six training targets, validation, V1 evaluation, frozen final confirmation | `configs/temporal.yaml`; notebook 01; boundary tests |
 | 4. Behavioral EDA | Questions, full-scope aggregates, figures, hypotheses and limits | Notebook 02; `docs/eda_summary.md` |
 | 5. Retrieval and features | Historical candidates and feature dictionary | Notebook 03; `recommendation_features.py` |
 | 6. Simple references | Popularity, preferred types, recent purchases; candidate coverage | Notebook 03; complete-reference validation |
 | 7. LightGBM | Initial ranker, then controlled six-configuration search and MLflow | Completed: notebook 04 prepares groups, notebook 05 records the initial ranker, notebook 06 records all six configurations and the stage-8 candidate |
 | 8. Explain and select | Importance, SHAP, ablations, robustness, final refit and V1 assessment | Completed in notebook 07: selected-model diagnostics, frozen eight-tree refit and intermediate V1; see evaluation report and model card |
 
-Notebook numbers identify the learning sequence and are not a second definition of the original plan stages. The five French revision sheets follow this notebook sequence.
+Notebook numbers identify the learning sequence and are not a second definition of the original plan stages. French revision sheets accompany the completed learning increments.
 
 ## Data and temporal contract
 
@@ -59,7 +59,7 @@ Streamlit provides customer, selection, comparison and analysis views. Display t
 
 ## Subsequent enhancements
 
-**PyTorch:** client/article embeddings of dimension 32, standardised numerical variables, dense layers 128/64, ReLU, dropout 0.2, within-group purchased/unobserved pairs, AdamW at 0.001, maximum 20 epochs with validation stopping. Compare common candidates/periods/metrics, training duration, latency and size; unknown IDs use fallback. Freeze both fitting procedures before final confirmation.
+**PyTorch (local scientific extension complete):** notebooks 08-09 implement 32-dimensional client/article embeddings, 37 numeric inputs, dense layers 128/64, ReLU/dropout, pairwise training, validation selection, fixed three-epoch refit and frozen final confirmation. Timing and model size are recorded, but a controlled common inference-latency benchmark remains deferred. PyTorch is not integrated into DVC/API/UI. See [results and limitations](pytorch_results.md).
 
 **GCP:** reuse containers with Cloud Storage artifacts, Artifact Registry images, Cloud Run API/UI, explicit Cloud Run batch Jobs, Terraform and federated GitHub Actions authentication. Target `europe-west1` after checking availability. MLflow remains local with exported results. Verify project and billing before provisioning; no cloud resource is required for local V1.
 
@@ -72,14 +72,14 @@ Notebook 07 covers every scientific stage-8 item: gain importance, native SHAP e
 
 The 63/20 configuration with all 31 features was frozen with an eight-iteration refit budget. Seven cutoffs produce 2,974 informative groups / 892,200 fitting rows. Intermediate V1 gives MAP@12=0.022927 versus 0.022168 for the validation-selected recent-purchases baseline; the paired 95% interval of the difference is [-0.002626, 0.004346]. This does not establish clear superiority. V1 does not change the frozen decision.
 
-The next reference-plan section is the reproducible local pipeline and application. Final confirmation stays reserved for a later frozen LightGBM/PyTorch comparison. See [evaluation report](stage8_evaluation_report.md) and [model card](model_card.md).
+The subsequent local pipeline and application are now complete. Final confirmation was later evaluated in notebooks 08-09 after both fitting procedures were frozen; the stage-8 report remains a historical V1 record. See [evaluation report](stage8_evaluation_report.md) and [model card](model_card.md).
 
 
 ## Verified local pipeline completion
 
 The seven local pipeline stages have been executed for `local_v1`, from source-file validation through the portable serving bundle. The unified CLI supports status, full verification, individual stages and resumable execution. DVC 3.67.1 executed its graph using all seven verified stage outputs, wrote the eight-stage `dvc.lock`, and completed the final integrity check. The Python suite passed 134 synthetic tests.
 
-This replay preserves the historical native model identity and V1 results; final confirmation remains reserved. The bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations. Its reader supports known customers, reference-method comparison and an explicit popularity fallback for unknown IDs without raw data or MLflow access.
+This replay preserves the historical native model identity and V1 results; it predates and does not include the later offline final confirmation. The bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations. Its reader supports known customers, reference-method comparison and an explicit popularity fallback for unknown IDs without raw data or MLflow access.
 
 FastAPI wraps the packaged reader with typed public responses, startup verification and explicit unknown-customer fallback. Streamlit now consumes the API. The next increments are containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
 
@@ -96,6 +96,14 @@ The API increment passed ten HTTP tests and the complete 144-test Python suite. 
 
 Streamlit now provides profile, selection, comparison and analysis views through HTTP only. Customers can be browsed in pages of 100 or loaded by identifier. A local selection can retain any subset of the twelve proposals and export their factual metadata as JSON. Draft choices survive view navigation and reset when the customer, recommendation method or serving snapshot changes.
 
-The API adds `/analysis` for packaged aggregate V1 results and uncertainty; it does not expose individual target outcomes. The interface keeps historical dates, unknown-ID fallback, no-history profiles, missing metadata, ranking-score limits, complete-reference denominators and the reserved final confirmation explicit. Every rerun checks readiness before reading the versioned short-lived UI cache.
+The API adds `/analysis` for packaged aggregate V1 results and uncertainty; it does not expose individual target outcomes. The interface keeps historical dates, unknown-ID fallback, no-history profiles, missing metadata, ranking-score limits, complete-reference denominators and the V1 snapshot's original confirmation status explicit. That packaged caption predates the later offline confirmation; the application does not expose the new comparison. Every rerun checks readiness before reading the versioned short-lived UI cache.
 
 The complete Python suite passes 158 tests, including HTTP consumer and Streamlit AppTest workflows. The real `local_v1` campaign passes full artifact verification with the additional dependencies. Live API/UI checks match the recorded V1 evidence and verify a JSON selection with eleven distinct string article IDs. The eight added locked packages preserve all 148 previous versions. See [UI documentation](ui.md) for setup and verification scope. Docker Compose and synthetic CI remain to implement.
+
+## Verified local PyTorch and final-confirmation completion
+
+At the user's request, local PyTorch work preceded containers and cloud work. Notebook 08 records training/selection and the frozen final refit. Notebook 09 runs independently from a fresh kernel with the required local artifacts, loading saved predictions by default. Its saved seven substantive code-cell outputs and completed MLflow run were checked, together with artifact checksums and saved comparisons. The reorganized notebook 08 was not freshly replayed end to end, and the existing 158-test application suite was not rerun for this neural closure.
+
+Final confirmation covers 20,000 recipients, 1,027 buyers and 3,267 complete-reference targets. Recent purchases leads MAP at 0.020584, followed by PyTorch hybrid at 0.020575 and LightGBM at 0.017709. The paired neural-minus-LightGBM interval [-0.002320, 0.008160] contains zero. The original validation-selected nomination is preserved, with no test-driven retuning or application replacement.
+
+Completed scope: local neural learning, persisted/refitted artifacts, frozen complete-reference evaluation, paired bootstrap and MLflow provenance. Still deferred: a common inference-latency benchmark, neural serving/DVC integration, Docker Compose, synthetic CI, GCP and advisor copilot. Documentation/commit/push remain user actions until applied and checked.

@@ -4,7 +4,7 @@
 
 A retrospective fashion recommendation prototype for a client advisor: rank twelve distinct articles per anonymised customer from 300 historical candidates. The frozen LightGBM configuration was selected on validation MAP@12. Its final V1 MAP point estimate is slightly higher than the selected baseline, but the paired interval includes zero; clear superiority is not established.
 
-This artifact is not a calibrated purchase-probability model, current-stock system or measured business-impact intervention. The local API serves the packaged historical bundle; UI integration remains the next milestone.
+This artifact is not a calibrated purchase-probability model, current-stock system or measured business-impact intervention. The local FastAPI and Streamlit application serve the packaged historical LightGBM V1 bundle. A separate completed PyTorch/LightGBM confirmation is described below.
 
 ## Model and inputs
 
@@ -59,6 +59,12 @@ Recorded local validation inference stages sum to 59.07 s on 20,000 recipients /
 - Training manifest: `data/processed/weekly_v1/final_training/manifest.json`.
 - Model and evaluation manifests: `final_ranker/manifest.json` and `v1_evaluation/evaluation_manifest.json` under the same data root.
 - Source hashes and MLflow notebook snapshots identify executed code, including saved working-tree changes; a Git base alone is not proof of a clean training tree.
-- V1 is evaluated. Final confirmation [2020-09-16, 2020-09-23) is reserved for a later frozen LightGBM/PyTorch comparison.
+- V1 and the frozen final confirmation [2020-09-16, 2020-09-23) are evaluated. Earlier protocol files retain their freeze-time status; do not rewrite them.
 
 See the [stage-8 report](stage8_evaluation_report.md) and [evaluation strategy](evaluation.md).
+
+## Later offline neural comparison
+
+The final PyTorch hybrid uses customer/article embeddings (32 each), 37 numeric inputs, 128/64 ReLU layers and dropout 0.2. It was newly refitted for the validation-selected three epochs on the same seven fitting weeks, ending before 2020-09-09. The complete hybrid includes recent-purchases fallback for unknown customer IDs; unknown articles use the reserved zero embedding and historical numeric features.
+
+On final confirmation, LightGBM MAP@12 is 0.017709, PyTorch hybrid 0.020575 and recent purchases 0.020584 over the same 1,027 buyers / 3,267 full targets. The paired PyTorch-minus-LightGBM interval [-0.002320, 0.008160] contains zero. Neither learned model leads the baseline on MAP point estimate; no equivalence claim follows. No final-week retuning or serving replacement was performed. See the [full neural/confirmation report](pytorch_results.md) for scope, identities, fallback proportions and reproducibility limits.

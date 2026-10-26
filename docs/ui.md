@@ -77,3 +77,7 @@ uvx --from dvc==3.67.1 dvc repro
 The scientific implementations and bundle reader remain unchanged. Valid local outputs remain reusable. Docker Compose and synthetic CI are the next increments.
 
 Framework references: [Streamlit configuration](https://docs.streamlit.io/develop/api-reference/configuration/config.toml), [application testing](https://docs.streamlit.io/develop/concepts/app-testing) and [AppTest](https://docs.streamlit.io/develop/api-reference/app-testing/st.testing.v1.apptest).
+
+## Later offline confirmation scope
+
+This page documents the packaged 2020-09-09 LightGBM V1 snapshot and its completed local integration. Its stored captions/protocol fields predate the later frozen comparison. Final confirmation [2020-09-16, 2020-09-23) is now evaluated separately in notebook 09; neither PyTorch nor its final-week predictions are integrated into this serving bundle or DVC graph. See [the current neural/confirmation report](pytorch_results.md).

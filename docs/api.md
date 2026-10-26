@@ -85,3 +85,7 @@ The existing scientific stage implementations and package reader are unchanged, 
 The [Streamlit interface](ui.md) consumes these HTTP contracts. Containers and automated CI remain subsequent increments. Batch scoring duration is not an API latency measurement.
 
 Framework references: [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/), [response models](https://fastapi.tiangolo.com/tutorial/response-model/) and [HTTP testing](https://fastapi.tiangolo.com/tutorial/testing/).
+
+## Later offline confirmation scope
+
+This page documents the packaged 2020-09-09 LightGBM V1 snapshot and its completed local integration. Its stored captions/protocol fields predate the later frozen comparison. Final confirmation [2020-09-16, 2020-09-23) is now evaluated separately in notebook 09; neither PyTorch nor its final-week predictions are integrated into this serving bundle or DVC graph. See [the current neural/confirmation report](pytorch_results.md).

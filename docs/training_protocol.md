@@ -52,10 +52,22 @@ All 140,000 groups remain in the audit. The same training-only eligibility rule 
 
 Fit a new estimator for eight iterations without an evaluation set or early stopping. The saved final model has eight trees and 31 features. Scores before/after native reload agree on 1,000 deterministic probe rows, with maximum absolute error 0.0. Local fit-only time is 0.952 s, excluding data preparation and artifact checks.
 
-Final MLflow run: `8f90b653b86543f98358903363295f0e`; final model SHA-256: `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`. The pre-refit selection model and its diagnostics retain their own identity. V1 has been evaluated without changing the final weights; confirmation remains reserved.
+Final MLflow run: `8f90b653b86543f98358903363295f0e`; final model SHA-256: `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`. The pre-refit selection model and its diagnostics retain their own identity. V1 and the later frozen final confirmation have been evaluated without changing the final LightGBM weights.
 
 Historical candidate manifests remain records of earlier milestones. The frozen decision and final-fit/evaluation manifests describe the later lifecycle; do not rewrite the historical candidate file, whose hash is part of the frozen evidence.
 
 Preserve completed frozen campaigns. Timing and ablation re-execution produces new evidence even when configurations are identical, so full reproduction uses fresh derived-data storage. A fresh top-to-bottom replay was not performed during this closure.
 
-Next, extract the validated workflow into the local reproducible pipeline. See the [evaluation report](stage8_evaluation_report.md) and [evaluation strategy](evaluation.md).
+The local DVC pipeline, FastAPI and Streamlit integration are complete for the historical LightGBM V1 snapshot. The later neural experiment remains offline. See the [evaluation report](stage8_evaluation_report.md) and [evaluation strategy](evaluation.md).
+
+## Local neural ranker procedure
+
+Notebook 08 uses the same initial six-week fitting groups (2,533 groups / 759,900 rows / 3,787 positives), the 31 ordered numeric features and full-reference validation. Numeric preprocessing is fitted only on these fitting rows: median imputation, standard scaling and six fixed missingness flags give 37 numeric inputs. Customer/article vocabularies are fitted on training candidate rows, with index zero reserved for unseen IDs.
+
+Two 32-dimensional embeddings concatenate with the 37 numeric inputs, giving 101 inputs to Linear(101,128), ReLU, dropout 0.2, Linear(128,64), ReLU, dropout 0.2 and Linear(64,1). The output is an unrestricted ranking score. `src/atelier_ai/neural_ranker.py` owns the shared architecture and identifier encoding.
+
+For each informative group, compute `softplus(score_negative - score_positive)` over all positive–negative pairs. Average within the group, then across the batch's groups. There is no negative sampling; a group contains all 300 candidates. AdamW uses learning rate 0.001, weight decay 0.01, seed 42 and batches of 16 groups. Maximum budget: 20 epochs; stop after three epochs without strict improvement in full-reference validation MAP@12. Equal MAP retains the earlier epoch. Epoch 3 is selected; six epochs were executed. Validation MAP is 0.026914980, below LightGBM's 0.032710133.
+
+The final neural refit starts from new weights, refits preprocessing and vocabularies on the same seven-week dataset as final LightGBM (2,974 groups / 892,200 rows / 4,461 positives), and runs exactly three epochs without early stopping or final-week labels. Its vocabulary has 2,406 known customers and 14,454 known articles plus reserved indices. No V1 or confirmation target enters fitting. The final state has 560,961 parameters; reloaded scores agree exactly on 1,000 probe rows.
+
+Unknown customers use the frozen recent-purchases fallback; unknown articles retain their zero embedding while using historical numeric features. This hybrid policy is part of the evaluated system, not a new policy selected after confirmation. See [neural/confirmation artifacts](pytorch_results.md).
