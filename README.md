@@ -116,7 +116,7 @@ See [local pipeline commands, prerequisites and DVC setup](docs/local_pipeline.m
 
 ## Local recommendation API
 
-FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile` and `/recommendations` over the portable serving bundle. It loads and verifies the bundle once at startup. Unknown IDs have no profile and receive an explicit popularity fallback; historical dates, strategy, score kind and versions accompany the results.
+FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile`, `/recommendations` and `/analysis` over the portable serving bundle. It loads and verifies the bundle once at startup. Unknown IDs have no profile and receive an explicit popularity fallback; historical dates, strategy, score kind and versions accompany the results. Analysis exposes the packaged aggregate V1 comparison and uncertainty, without individual target outcomes.
 
 ```bash
 uv sync --locked --extra api
@@ -126,9 +126,23 @@ ATELIER_SERVING_BUNDLE=data/processed/pipeline_runs/local_v1/serving/bundle \
 
 Open [the local API docs](http://127.0.0.1:8000/docs). See [API setup, HTTP contracts and verification](docs/api.md).
 
+## Local advisor interface
+
+Streamlit calls the HTTP API for customer profiles, a selectable top-12 list with JSON export, side-by-side method comparison and aggregate V1 analysis. The interface displays the historical date and evaluation limits. It does not load local data or models.
+
+Install both extras, start or restart the API using the command above, then launch the UI in another terminal:
+
+```bash
+uv sync --locked --extra api --extra ui
+ATELIER_API_URL=http://127.0.0.1:8000 \
+  .venv/bin/python -m streamlit run streamlit_app.py
+```
+
+Open [the advisor interface](http://127.0.0.1:8501). See [UI setup, workflow and verification](docs/ui.md). The complete synthetic suite passes 158 tests with both extras installed; browser checks against `local_v1` also verify the live UI and JSON export.
+
 ## Next work
 
-1. Add Streamlit, Docker Compose and synthetic CI around the local API and portable serving bundle.
+1. Add Docker Compose and synthetic CI around the local API, Streamlit interface and portable serving bundle.
 2. Compare PyTorch under common candidates/periods/metrics and freeze both fitting procedures before opening final confirmation.
 3. Later add GCP and the advisor copilot according to the reference plan.
 

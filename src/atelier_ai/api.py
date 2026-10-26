@@ -1,6 +1,7 @@
 """Read-only FastAPI adapter for one independently verified serving bundle."""
 
 from contextlib import asynccontextmanager
+import json
 import logging
 import os
 from pathlib import Path
@@ -13,10 +14,10 @@ from lightgbm.basic import LightGBMError
 from starlette.concurrency import run_in_threadpool
 
 from atelier_ai.api_models import (
-    API_VERSION, CustomerId, CustomerPage, CustomerProfile, ErrorResponse,
+    API_VERSION, AnalysisResponse, CustomerId, CustomerPage, CustomerProfile, ErrorResponse,
     HealthResponse, ReadyResponse, RecommendationsResponse,
 )
-from atelier_ai.serving_bundle import ServingBundle
+from atelier_ai.serving_bundle import ServingBundle, read_table
 
 
 LOGGER = logging.getLogger(__name__)
@@ -128,6 +129,22 @@ def create_app(bundle_directory: str | Path | None = None) -> FastAPI:
                 "code": "unknown_method", "message": "Choose a recommendation method listed by /ready.",
             })
         return service.recommendations(customer_id, method=method)
+
+    @application.get("/analysis", response_model=AnalysisResponse, responses=NOT_READY, tags=["analysis"])
+    def analysis(service: BundleDependency):
+        """Expose packaged aggregate V1 evidence, without per-customer target outcomes."""
+        evidence = json.loads((service.directory / "provenance/evaluation.json").read_text(encoding="utf-8"))
+        fields = (
+            "start_inclusive", "end_exclusive", "recipients", "target_buyers", "excluded_nonbuyers",
+            "target_pairs", "candidate_target_pairs", "baseline_comparator", "prior_development_exposure",
+            "confirmation_evaluated", "bootstrap",
+        )
+        return {
+            "historical_date": service.manifest["historical_date"], "bundle_version": service.version,
+            **{field: evidence[field] for field in fields},
+            "comparison": read_table(service.directory, "comparison").to_dict(orient="records"),
+            "intervals": read_table(service.directory, "bootstrap_summary").to_dict(orient="records"),
+        }
 
     return application
 

@@ -53,7 +53,7 @@ Stage 8 covers native SHAP examples, gain importance, ablations without recency/
 
 Extract the validated workflow into preparation, targets, references, training, evaluation and serving stages. DVC records the stage dependencies. Large data, MLflow storage and generated models remain outside Git.
 
-The serving artifact contains the selected method/model, transformations, required aggregates, catalogue, demonstration profiles and version manifest. FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile` and `/recommendations`. An unknown customer receives an explicit popularity fallback; their profile remains absent. Responses contain article IDs, ranks, ranking scores, factual presentation fields, strategy, historical date and versions.
+The serving artifact contains the selected method/model, transformations, required aggregates, catalogue, demonstration profiles and version manifest. FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile`, `/recommendations` and aggregate `/analysis`. An unknown customer receives an explicit popularity fallback; their profile remains absent. Responses contain article IDs, ranks, ranking scores, factual presentation fields, strategy, historical date and versions.
 
 Streamlit provides customer, selection, comparison and analysis views. Display the historical reference date rather than implying current stock. Docker Compose runs API and UI. GitHub Actions tests a small synthetic pipeline and builds images; full training remains explicit. Validate data contracts, temporal safety, deterministic distinct recommendations, save/reload behavior, API fallbacks and the advisor workflow. Report measured latency and artifacts, not assumed business benefits.
 
@@ -81,7 +81,7 @@ The seven local pipeline stages have been executed for `local_v1`, from source-f
 
 This replay preserves the historical native model identity and V1 results; final confirmation remains reserved. The bundle contains 20,000 historical customer profiles, 50,383 observed catalogue articles, 113,678 preceding purchase rows and 240,000 learned recommendations. Its reader supports known customers, reference-method comparison and an explicit popularity fallback for unknown IDs without raw data or MLflow access.
 
-FastAPI now wraps the packaged reader with the five planned routes, typed public responses, startup verification and explicit unknown-customer fallback. The next increments are Streamlit, containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
+FastAPI wraps the packaged reader with typed public responses, startup verification and explicit unknown-customer fallback. Streamlit now consumes the API. The next increments are containers and synthetic CI. See [local pipeline instructions](local_pipeline.md) for the exact reproduction prerequisites and the scope of the completed DVC reuse check.
 
 
 ## Local API increment
@@ -91,3 +91,11 @@ The read-only FastAPI adapter loads the bundle once during application startup a
 The adapter uses the bundle independently of raw sources and MLflow. API dependencies are explicit while preserving all previously locked package versions. See [API documentation](api.md) for launch commands, response semantics and verification scope.
 
 The API increment passed ten HTTP tests and the complete 144-test Python suite. A live Uvicorn smoke check also passed against the recorded `local_v1` bundle, including known recommendations, unknown-ID fallback and API documentation.
+
+## Local advisor UI increment
+
+Streamlit now provides profile, selection, comparison and analysis views through HTTP only. Customers can be browsed in pages of 100 or loaded by identifier. A local selection can retain any subset of the twelve proposals and export their factual metadata as JSON. Draft choices survive view navigation and reset when the customer, recommendation method or serving snapshot changes.
+
+The API adds `/analysis` for packaged aggregate V1 results and uncertainty; it does not expose individual target outcomes. The interface keeps historical dates, unknown-ID fallback, no-history profiles, missing metadata, ranking-score limits, complete-reference denominators and the reserved final confirmation explicit. Every rerun checks readiness before reading the versioned short-lived UI cache.
+
+The complete Python suite passes 158 tests, including HTTP consumer and Streamlit AppTest workflows. The real `local_v1` campaign passes full artifact verification with the additional dependencies. Live API/UI checks match the recorded V1 evidence and verify a JSON selection with eleven distinct string article IDs. The eight added locked packages preserve all 148 previous versions. See [UI documentation](ui.md) for setup and verification scope. Docker Compose and synthetic CI remain to implement.

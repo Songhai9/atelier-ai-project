@@ -11,7 +11,7 @@ uv sync --locked --extra api
 .venv/bin/python -m pytest -q tests/test_api.py
 ```
 
-The API dependencies are explicit pins of versions already present in the previous lock: FastAPI 0.162.0, Pydantic 2.14.1 and Uvicorn 0.54.0. HTTPX 0.28.1 is declared for development tests. All 148 existing locked package versions are preserved.
+The API dependencies are explicit pins: FastAPI 0.162.0, Pydantic 2.14.1 and Uvicorn 0.54.0. HTTPX 0.28.1 is declared for development tests and the optional UI. The UI increment adds eight packages while preserving all 148 previously locked package versions.
 
 Start the local server with the completed bundle:
 
@@ -33,6 +33,7 @@ Open [interactive API documentation](http://127.0.0.1:8000/docs) or the [OpenAPI
 | `GET /customers?offset=0&limit=50` | 200, customer-ID-sorted page, total and next offset | 422 for invalid pagination; 503 when unavailable |
 | `GET /customers/{customer_id}/profile` | 200, historical aggregates and at most 20 preceding purchase rows | 404 for IDs outside the serving cohort; 422 for malformed IDs; 503 when unavailable |
 | `GET /recommendations?customer_id=...&method=...` | 200, exactly 12 distinct ranked articles | 422 for malformed parameters or unavailable methods; 503 when unavailable |
+| `GET /analysis` | 200, aggregate V1 comparison, paired MAP intervals and complete evaluation counts | 503 when unavailable |
 
 Customer IDs remain strings, preserving leading zeros. They accept 1–128 ASCII letters, digits, underscores or hyphens. Pagination uses a nonnegative offset and a page size from 1 to 100. An offset beyond the final page returns an empty list with no next offset.
 
@@ -48,12 +49,15 @@ Successful responses include an API version. Business responses also include the
 
 Profiles use only the 180 days strictly before the bundle's historical date. Repeated source purchase rows remain repeated; rows are not orders. Price values retain unresolved source units, and channel numbers retain source codes. Customer snapshot attributes and V1 target outcomes are not profile inputs. Catalogue metadata does not establish stock availability.
 
+`/analysis` reads the aggregate comparison, bootstrap summary and evaluation provenance already present in the verified bundle. It exposes four methods, their complete-reference metrics, MAP intervals and the model-minus-baseline interval. It also records the target week, recipient/buyer/target counts, candidate-target coverage, validation-selected comparator, paired bootstrap definition and prior V1 development exposure. It neither recalculates evaluation nor exposes per-customer future purchases. Final confirmation remains unevaluated. Restart an API process launched before this route was added.
+
 ## Quick requests
 
 ```bash
 curl -s http://127.0.0.1:8000/ready
 curl -s 'http://127.0.0.1:8000/customers?limit=1'
 curl -s 'http://127.0.0.1:8000/recommendations?customer_id=unknown-demo'
+curl -s http://127.0.0.1:8000/analysis
 ```
 
 Copy a real ID from `/customers` into the profile path or recommendation query in `/docs` to inspect a known customer. Select a method listed by `/ready` to compare the learned system with a reference.
@@ -66,7 +70,7 @@ The bundle must remain immutable while the server runs. If a profile-history fil
 
 Pydantic models describe and validate successful responses in OpenAPI, including finite scores and exactly twelve recommendation items. The HTTP tests cover pagination, all methods, zero-history profiles, unknown IDs, invalid requests, readiness failures, checksum corruption, concurrent reads and serving after the original project/MLflow directory is moved away.
 
-The full Python suite passed 144 tests. A live Uvicorn HTTP smoke check against the recorded `local_v1` bundle passed all five routes, a known customer's twelve recommendations, unknown-profile 404, unknown-ID fallback, Swagger and OpenAPI. The check used 20,000 packaged customers at historical date 2020-09-09, retained model SHA-256 `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`, and left the serving manifest unchanged. The temporary test server was stopped afterward.
+The API increment originally passed 144 tests; the UI increment extends the full suite to 158 passing tests with both extras installed, including eleven API tests. A live Uvicorn HTTP check against the recorded `local_v1` bundle passed all six routes, a known customer's twelve recommendations, unknown-profile 404, unknown-ID fallback, Swagger and aggregate V1 analysis. The check used 20,000 packaged customers at historical date 2020-09-09 and retained model SHA-256 `d6ca939c488a707c9a8c5be7480f738df640d2bc0a3496fdcb20b573f8353bf3`. The analysis response matches the recorded 1,015 evaluated buyers, 3,073 targets, 618 candidate-target hits and learned MAP@12=0.02292698798017822.
 
 The pinned Starlette test client currently reports a deprecation warning for its HTTPX compatibility layer. The HTTP tests pass with the locked versions; this warning is confined to the test client.
 
@@ -78,6 +82,6 @@ uvx --from dvc==3.67.1 dvc repro
 
 The existing scientific stage implementations and package reader are unchanged, so valid `local_v1` outputs remain reusable. DVC retains the existing output directories and finishes with full integrity verification.
 
-This increment adds the API only. Streamlit, containers and automated CI follow as separate increments. Batch scoring duration is not an API latency measurement.
+The [Streamlit interface](ui.md) consumes these HTTP contracts. Containers and automated CI remain subsequent increments. Batch scoring duration is not an API latency measurement.
 
 Framework references: [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/), [response models](https://fastapi.tiangolo.com/tutorial/response-model/) and [HTTP testing](https://fastapi.tiangolo.com/tutorial/testing/).

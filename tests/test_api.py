@@ -202,7 +202,7 @@ def test_openapi_is_available_without_loading_data_and_covers_contracts(monkeypa
     monkeypatch.setattr(api, "ServingBundle", do_not_load)
     application = api.create_app()
     schema = application.openapi()
-    assert set(schema["paths"]) == {"/health", "/ready", "/customers", "/customers/{customer_id}/profile", "/recommendations"}
+    assert set(schema["paths"]) == {"/health", "/ready", "/customers", "/customers/{customer_id}/profile", "/recommendations", "/analysis"}
     assert schema["paths"]["/recommendations"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith("RecommendationsResponse")
     assert "503" in schema["paths"]["/ready"]["get"]["responses"]
     assert "404" in schema["paths"]["/customers/{customer_id}/profile"]["get"]["responses"]
@@ -218,3 +218,20 @@ def test_unexpected_programming_error_is_not_silently_treated_as_bad_data(monkey
     with pytest.raises(RuntimeError, match="application bug"):
         with TestClient(api.create_app("unused")):
             pass
+
+
+def test_analysis_exposes_complete_aggregate_evidence_without_individual_outcomes(api_bundle):
+    _, directory = api_bundle
+    from atelier_ai.api_models import AnalysisResponse
+
+    with TestClient(api.create_app(directory)) as client:
+        response = client.get("/analysis")
+        assert response.status_code == 200
+        report = AnalysisResponse.model_validate(response.json())
+        assert report.recipients == 3 and report.target_buyers == 2 and report.target_pairs == 3
+        assert report.candidate_target_pairs == 1
+        assert len(report.comparison) == 4 and len(report.intervals) == 5
+        assert report.baseline_comparator == "recent_purchases_180d"
+        assert report.bootstrap.paired is True and report.bootstrap.resamples == 5000
+        assert report.confirmation_evaluated is False
+        assert "customer_id" not in response.text and "source_purchases" not in response.text

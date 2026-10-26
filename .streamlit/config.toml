@@ -1,0 +1,21 @@
+[server]
+headless = true
+address = "127.0.0.1"
+port = 8501
+fileWatcherType = "poll"
+folderWatchBlacklist = ["data", "mlruns", "mlartifacts", ".venv"]
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"
+
+[theme]
+base = "light"
+primaryColor = "#176658"
+backgroundColor = "#F6F4EE"
+secondaryBackgroundColor = "#EAE8E0"
+textColor = "#26362F"
+font = "sans-serif"
+headingFont = "serif"

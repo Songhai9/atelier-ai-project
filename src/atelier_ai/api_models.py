@@ -120,3 +120,57 @@ class ValidationIssue(BaseModel):
 
 class ErrorResponse(PublicModel):
     detail: ErrorDetail | list[ValidationIssue]
+
+
+class MethodEvaluation(PublicModel):
+    method: str
+    recommendation_customers: Count
+    evaluated_customers: Count
+    excluded_customers: Count
+    excluded_share_pct: Annotated[FiniteFloat, Field(ge=0, le=100)]
+    target_pairs: Count
+    retrieved_target_pairs: Count
+    map_at_k: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    recall_at_k: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    ndcg_at_k: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    micro_recall_at_k: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    candidate_coverage: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    catalogue_coverage: Annotated[FiniteFloat, Field(ge=0, le=1)]
+    mean_recommended_product_groups: Annotated[FiniteFloat, Field(ge=0, le=12)]
+
+
+class MapInterval(PublicModel):
+    method: str
+    metric: Literal["map_at_12", "delta_map_at_12"]
+    observed: FiniteFloat
+    ci_lower: FiniteFloat
+    ci_upper: FiniteFloat
+    evaluated_buyers: Count
+    bootstrap_resamples: Annotated[int, Field(ge=1)]
+
+
+class BootstrapDefinition(PublicModel):
+    unit: Literal["target buyer"]
+    paired: Literal[True]
+    resamples: Annotated[int, Field(ge=1)]
+    seed: int
+    confidence_level: Annotated[FiniteFloat, Field(gt=0, lt=1)]
+    batch_size: Annotated[int, Field(ge=1)]
+    interval_method: Literal["percentile"]
+    scope: str
+
+
+class AnalysisResponse(SnapshotResponse):
+    start_inclusive: date
+    end_exclusive: date
+    recipients: Count
+    target_buyers: Count
+    excluded_nonbuyers: Count
+    target_pairs: Count
+    candidate_target_pairs: Count
+    baseline_comparator: str
+    prior_development_exposure: bool
+    confirmation_evaluated: Literal[False]
+    bootstrap: BootstrapDefinition
+    comparison: list[MethodEvaluation]
+    intervals: list[MapInterval]
