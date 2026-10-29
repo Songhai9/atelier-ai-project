@@ -8,19 +8,6 @@ At each historical cutoff, retrieve 300 distinct candidate articles using earlie
 
 The project follows **data foundation → temporal protocol → behavioral EDA → candidates/features → reference methods → learned ranker → selection → local application**. The [implementation plan](docs/implementation_plan.md) records completed deliverables and the next increments.
 
-## Current milestone
-
-Scientific plan stages 1-8, the local DVC pipeline, FastAPI and Streamlit interface are complete. Notebooks 08-09 add a local PyTorch ranker and frozen final confirmation. LightGBM leads validation MAP; neither learned system exceeds the recent-purchases baseline on final-confirmation MAP. The PyTorch-minus-LightGBM interval includes zero.
-
-- Source diagnostics cover 105,542 articles, 1,371,980 customer records and 31,788,324 purchase rows. Raw files remain unchanged; typed Parquet supports repeatable analysis.
-- The shared calendar defines six historical training weeks, validation, intermediate V1 evaluation and final model confirmation.
-- Behavioral EDA covers temporal/category activity, customer histories, repeat delays, popularity and top-seller renewal, category/colour breadth and affinities, prices and channels.
-- A fixed future-independent cohort contains 20,000 customers. Candidates combine 30 personal articles, global top 100, three preferred types × 50, and 28-day popularity fill to 300.
-- Historical preparation stores 36,000,000 labelled candidate rows across 120,000 groups. Initial model-selection fitting uses 2,533 complete groups / 759,900 rows and 31 features.
-- All six LambdaRank configurations use at most 1,000 iterations and full-reference validation NDCG@12 stopping with patience 50. The selected validation candidate uses 63 leaves, minimum 20 examples per leaf and iteration 8; the initial 31/100 experiment selected iteration 16.
-- Notebook 07 records gain importance, native SHAP examples, three feature ablations, error/history diagnostics, customer bootstrap uncertainty and local batch timings.
-- Final selection is frozen before the seven-week refit. The final model has eight trees and 31 features; save/reload checks pass on 1,000 probe rows. V1 predictions and complete-reference metrics are stored with MLflow provenance.
-
 ## Validation results
 
 | Method | MAP@12 | Recall@12 | NDCG@12 |
@@ -132,18 +119,6 @@ The unified CLI provides `plan`, `status`, `verify`, individual stage commands a
 
 See [local pipeline commands, prerequisites and DVC setup](docs/local_pipeline.md).
 
-## Local recommendation API
-
-FastAPI exposes `/health`, `/ready`, `/customers`, `/customers/{id}/profile`, `/recommendations` and `/analysis` over the portable serving bundle. It loads and verifies the bundle once at startup. Unknown IDs have no profile and receive an explicit popularity fallback; historical dates, strategy, score kind and versions accompany the results. Analysis exposes the packaged aggregate V1 comparison and uncertainty, without individual target outcomes.
-
-```bash
-uv sync --locked --extra api
-ATELIER_SERVING_BUNDLE=data/processed/pipeline_runs/local_v1/serving/bundle \
-  .venv/bin/python -m uvicorn atelier_ai.api:app --host 127.0.0.1 --port 8000
-```
-
-Open [the local API docs](http://127.0.0.1:8000/docs). See [API setup, HTTP contracts and verification](docs/api.md).
-
 ## Local advisor interface
 
 Streamlit calls the HTTP API for customer profiles, a selectable top-12 list with JSON export, side-by-side method comparison and aggregate V1 analysis. The interface displays the historical date and evaluation limits. It does not load local data or models.
@@ -157,28 +132,5 @@ ATELIER_API_URL=http://127.0.0.1:8000 \
 ```
 
 Open [the advisor interface](http://127.0.0.1:8501). See [UI setup, workflow and verification](docs/ui.md). The complete synthetic suite passes 158 tests with both extras installed; browser checks against `local_v1` also verify the live UI and JSON export.
-
-## Next work
-
-1. Review and commit the completed local PyTorch/confirmation evidence and documentation.
-2. Containers and synthetic CI remain deferred at the user's request, followed by GCP and the advisor copilot.
-3. A common inference-latency benchmark and any PyTorch serving/DVC integration require a separate increment; this closure makes no comparative latency or production claim.
-
-## Documentation and limits
-
-- [Project brief](docs/project_brief.md)
-- [Implementation plan](docs/implementation_plan.md)
-- [Evaluation strategy](docs/evaluation.md)
-- [Training protocol](docs/training_protocol.md)
-- [Feature dictionary](docs/feature_dictionary.md)
-- [Initial ranking results](docs/first_ranker_results.md)
-- [Controlled LightGBM tuning](docs/lightgbm_tuning_results.md)
-- [Stage-8 evaluation report](docs/stage8_evaluation_report.md)
-- [Model card](docs/model_card.md)
-- [Local PyTorch and frozen final confirmation](docs/pytorch_results.md)
-- [Methodological decisions](docs/methodological_decisions.md)
-- [Behavioral EDA summary](docs/eda_summary.md)
-- [Data card](docs/data_card.md)
-- [Data dictionary](docs/data_dictionary.md)
 
 The project uses the [H&M recommendation benchmark](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/). Metadata observation dates, stock, price units, `FN`/`Active` semantics and channel business labels remain unresolved. Customer snapshot attributes are excluded from the initial feature matrix. Historical benchmark results do not establish performance in luxury retail or causal business benefits.
